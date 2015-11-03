@@ -1,0 +1,13 @@
+{
+  "name": "OverlayCommunicator",
+  "version": "0.0.0",
+  "description": "OverlayCommunicator",
+  "main": "app.js",
+  "author": {
+    "name": "Robert",
+    "email": ""
+  },
+  "dependencies": {
+    "websocket": "^1.0.22"
+  }
+}
