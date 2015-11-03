@@ -1,6 +1,6 @@
 @font-face {
     font-family: 'Topaz a600a1200a400';
-    src: local('Topaz a600a1200a400'), url("Topaz_a1200_v1.0.ttf") format('truetype');
+    src: local('Topaz a600a1200a400'), url("../font/Topaz_a1200_v1.0.ttf") format('truetype');
 }
 body {
     background: rgba(0, 0, 0, 0);

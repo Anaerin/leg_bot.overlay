@@ -47,7 +47,7 @@
     <Content Include="Overlay\images\InsertDisk.gif" />
     <Content Include="Overlay\images\ScreenSwitchGadget.gif" />
     <Content Include="Overlay\css\stylesheet.css" />
-    <Content Include="Overlay\Topaz_a1200_v1.0.ttf" />
+    <Content Include="Overlay\font\Topaz_a1200_v1.0.ttf" />
     <Content Include="Overlay\images\Active\WindowFrameBottomBar.gif" />
     <Content Include="Overlay\images\Active\WindowFrameBottomLeft.gif" />
     <Content Include="Overlay\images\Active\WindowFrameLeft.gif" />
@@ -67,6 +67,7 @@
     <Folder Include="Overlay\images\Active\" />
     <Folder Include="Overlay\css\" />
     <Folder Include="Overlay\js\" />
+    <Folder Include="Overlay\font\" />
   </ItemGroup>
   <!-- Do not delete the following Import Project.  While this appears to do nothing it is a marker for setting TypeScript properties before our import that depends on them. -->
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="False" />
