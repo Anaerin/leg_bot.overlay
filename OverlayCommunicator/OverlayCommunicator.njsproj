@@ -31,9 +31,42 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="app.js" />
+    <Compile Include="Overlay\js\StreamerCounts.js" />
     <Content Include="OverlayControl.htm" />
+    <Content Include="Overlay\images\boingball.gif" />
+    <Content Include="Overlay\HTMLoverlay.htm" />
+    <Content Include="Overlay\images\Inactive\InactiveWindowFrameBottomBar.gif" />
+    <Content Include="Overlay\images\Inactive\InactiveWindowFrameBottomLeft.gif" />
+    <Content Include="Overlay\images\Inactive\InactiveWindowFrameLeft.gif" />
+    <Content Include="Overlay\images\Inactive\InactiveWindowFrameRightSide.gif" />
+    <Content Include="Overlay\images\Inactive\InactiveWindowFrameSides.gif" />
+    <Content Include="Overlay\images\Inactive\InactiveWindowSizeAndScrollGadgets.gif" />
+    <Content Include="Overlay\images\Inactive\InactiveWindowTitleBarBackground.gif" />
+    <Content Include="Overlay\images\Inactive\InactiveWindowTitleBarCloseGadget.gif" />
+    <Content Include="Overlay\images\Inactive\InactiveWindowTitleBarSizingGadgets.gif" />
+    <Content Include="Overlay\images\InsertDisk.gif" />
+    <Content Include="Overlay\images\ScreenSwitchGadget.gif" />
+    <Content Include="Overlay\css\stylesheet.css" />
+    <Content Include="Overlay\Topaz_a1200_v1.0.ttf" />
+    <Content Include="Overlay\images\Active\WindowFrameBottomBar.gif" />
+    <Content Include="Overlay\images\Active\WindowFrameBottomLeft.gif" />
+    <Content Include="Overlay\images\Active\WindowFrameLeft.gif" />
+    <Content Include="Overlay\images\Active\WindowFrameRightSide.gif" />
+    <Content Include="Overlay\images\Active\WindowFrameSides.gif" />
+    <Content Include="Overlay\images\Active\WindowSizeAndScrollGadgets.gif" />
+    <Content Include="Overlay\images\Active\WindowTitleBarBackground.gif" />
+    <Content Include="Overlay\images\Active\WindowTitleBarCloseGadget.gif" />
+    <Content Include="Overlay\images\Active\WindowTitleBarSizingGadgets.gif" />
     <Content Include="package.json" />
     <Content Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Overlay\" />
+    <Folder Include="Overlay\images\" />
+    <Folder Include="Overlay\images\Inactive\" />
+    <Folder Include="Overlay\images\Active\" />
+    <Folder Include="Overlay\css\" />
+    <Folder Include="Overlay\js\" />
   </ItemGroup>
   <!-- Do not delete the following Import Project.  While this appears to do nothing it is a marker for setting TypeScript properties before our import that depends on them. -->
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="False" />
