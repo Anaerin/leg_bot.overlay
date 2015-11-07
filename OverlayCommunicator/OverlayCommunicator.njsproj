@@ -31,10 +31,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="app.js" />
+    <Compile Include="Overlay\js\adapter.js" />
     <Compile Include="Overlay\js\StreamerCounts.js" />
-    <Content Include="OverlayControl.htm" />
+    <Content Include="Overlay\images\WebCamImage.png" />
+    <Content Include="Overlay\OverlayControl.html" />
     <Content Include="Overlay\images\boingball.gif" />
-    <Content Include="Overlay\HTMLoverlay.htm" />
+    <Content Include="Overlay\index.html" />
     <Content Include="Overlay\images\Inactive\InactiveWindowFrameBottomBar.gif" />
     <Content Include="Overlay\images\Inactive\InactiveWindowFrameBottomLeft.gif" />
     <Content Include="Overlay\images\Inactive\InactiveWindowFrameLeft.gif" />

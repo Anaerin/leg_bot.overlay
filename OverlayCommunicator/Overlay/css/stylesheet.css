@@ -11,18 +11,7 @@ body {
     /* height: 1079px;
     width: 1920px; */
 }
-#bug {
-    background-image: url('bug.png');
-}
-#death {
-    background-image: url('death.png');
-}
-#flunge {
-    background-image: url('flunge.png');
-}
-#tilt {
-    background-image: url('tilt.png');
-}
+
 .ScreenTitle {
     border-bottom: 2px solid black;
     background-color: white;
@@ -33,24 +22,25 @@ body {
     height: 19px;
 }
 .Window {
-    background-image: url("../images/Active/WindowFrameBottomLeft.gif"), url("../images/Active/WindowSizeAndScrollGadgets.gif"), url("../images/Active/WindowTitleBarSizingGadgets.gif"), url("../images/Active/WindowTitleBarCloseGadget.gif"), url("../images/Active/WindowTitleBarBackground.gif"), url("../images/Active/WindowFrameRightSide.gif"), url("../images/Active/WindowFrameBottomBar.gif"), url("../images/Active/WindowFrameLeft.gif");
+    background-image: url("../images/Inactive/InactiveWindowFrameBottomLeft.gif"), url("../images/Inactive/InactiveWindowSizeAndScrollGadgets.gif"), url("../images/Inactive/InactiveWindowTitleBarSizingGadgets.gif"), url("../images/Inactive/InactiveWindowTitleBarCloseGadget.gif"), url("../images/Inactive/InactiveWindowTitleBarBackground.gif"), url("../images/Inactive/InactiveWindowFrameRightSide.gif"), url("../images/Inactive/InactiveWindowFrameBottomBar.gif"), url("../images/Inactive/InactiveWindowFrameLeft.gif");
     background-position: bottom left, bottom right, top right, top left, top left, top right, bottom left, bottom left;
     background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat-x, repeat-y, repeat-x, repeat-y;
-    padding: 24px 36px 15px 8px;
+    padding: 24px 36px 15px 10px;
     background-color: #aaa;
 }
-.Window.Inactive {
-    background-image: url("../images/Inactive/InactiveWindowFrameBottomLeft.gif"), url("../images/Inactive/InactiveWindowSizeAndScrollGadgets.gif"), url("../images/Inactive/InactiveWindowTitleBarSizingGadgets.gif"), url("../images/Inactive/InactiveWindowTitleBarCloseGadget.gif"), url("../images/Inactive/InactiveWindowTitleBarBackground.gif"), url("../images/Inactive/InactiveWindowFrameRightSide.gif"), url("../images/Inactive/InactiveWindowFrameBottomBar.gif"), url("../images/Inactive/InactiveWindowFrameLeft.gif");
+.Window.Active {
+	background-image: url("../images/Active/WindowFrameBottomLeft.gif"), url("../images/Active/WindowSizeAndScrollGadgets.gif"), url("../images/Active/WindowTitleBarSizingGadgets.gif"), url("../images/Active/WindowTitleBarCloseGadget.gif"), url("../images/Active/WindowTitleBarBackground.gif"), url("../images/Active/WindowFrameRightSide.gif"), url("../images/Active/WindowFrameBottomBar.gif"), url("../images/Active/WindowFrameLeft.gif");    
 }
 .Window header {
     margin-top: -22px;
     padding-left: 35px;
     padding-top: 1px;
-    color: white;
+    color: black;
+	
     /* text-shadow: 2px 2px 0px black; */
 }
-.Window.Inactive header {
-    color: black;
+.Window.Active header {
+    color: white;
 }
 .GameWindow {
     position: absolute;
@@ -112,12 +102,31 @@ body {
     height: 125px;
 }
 .WebcamWindow {
-    position: absolute;
-    right: 0px;
-    bottom: 0px;
-    width: 317px;
-    height: 183px;
-    background-color: rgba(0, 0, 0, 0);
+	position: absolute;
+	width: 315px;
+	height: 183px;
+	top: calc(100% - 222px);
+	left: calc(100% - 361px);
+	/* background-color: rgba(0, 0, 0, 0); */
+	background-color: #aaa;
+	transition: width ease 2s, height ease 2s, top 2s ease 2s, left 2s ease 2s;
+	overflow: hidden;
+	background-image: url('../images/WebCamImage.png'), url("../images/Inactive/InactiveWindowFrameBottomLeft.gif"), url("../images/Inactive/InactiveWindowSizeAndScrollGadgets.gif"), url("../images/Inactive/InactiveWindowTitleBarSizingGadgets.gif"), url("../images/Inactive/InactiveWindowTitleBarCloseGadget.gif"), url("../images/Inactive/InactiveWindowTitleBarBackground.gif"), url("../images/Inactive/InactiveWindowFrameRightSide.gif"), url("../images/Inactive/InactiveWindowFrameBottomBar.gif"), url("../images/Inactive/InactiveWindowFrameLeft.gif");
+    background-position: center center, bottom left, bottom right, top right, top left, top left, top right, bottom left, bottom left;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat-x, repeat-y, repeat-x, repeat-y;
+}
+.WebcamWindow.Active {
+	background-image: url('../images/WebCamImage.png'), url("../images/Active/WindowFrameBottomLeft.gif"), url("../images/Active/WindowSizeAndScrollGadgets.gif"), url("../images/Active/WindowTitleBarSizingGadgets.gif"), url("../images/Active/WindowTitleBarCloseGadget.gif"), url("../images/Active/WindowTitleBarBackground.gif"), url("../images/Active/WindowFrameRightSide.gif"), url("../images/Active/WindowFrameBottomBar.gif"), url("../images/Active/WindowFrameLeft.gif");    
+}
+.WebcamWindow header {
+	margin-bottom: 3px;
+}
+.WebcamWindow.Booth {
+	top: 21px;
+	left: 0px;
+	width: calc(100% - 407px);
+	height: calc(100% - 224px);
+	transition: width 2s ease 2s, height 2s ease 2s, top ease 2s, left ease 2s;
 }
 .countdownHolder {
     position: absolute;
@@ -142,16 +151,13 @@ body {
     width: 33%;
     height: 35px;
 }
-body.noWebcam .ChatWindow {
-    bottom: 0px;
-}
 fieldset {
     border-width: 4px;
     height: 35px;
     font-size: 200%;
     padding-left: 2px;
     padding-right: 2px;
-    padding-bottom: 12px;
+    padding-bottom: 18px;
     padding-top: 4px;
 }
 fieldset legend {
@@ -159,7 +165,7 @@ fieldset legend {
     color: white;
     font-size: 50%;
 }
-#follower-alert {
+#alert {
     position: absolute;
     top: -41px;
     left: 0px;
@@ -167,7 +173,6 @@ fieldset legend {
     height: 37px;
     text-align: center;
     animation-duration: 2s;
-    background-color: red;
     transition: top ease 2s;
     z-index: 5;
     font-size: 200%;
@@ -175,12 +180,21 @@ fieldset legend {
     color: #ffffff;
     padding-top: 4px;
 }
+#alert.visible {
+    top: 0px;
+}
+#alert.follow {
+    background-color: red;
+    color: white;
+}
+#alert.donation {
+    background-color: yellow;
+    color: black;
+    text-shadow: none;
+}
 fieldset marquee {
     margin: 0;
     padding: 0;
-}
-#follower-alert.visible {
-    top: 0px;
 }
 .AFKWindow.Hidden {
     bottom: 1080px;
@@ -188,3 +202,17 @@ fieldset marquee {
     opacity: 0;
     transition: bottom ease 2s, right ease 2s, opacity 0.1s linear 2s;
 }
+.WebcamWindow video {
+    opacity: 1;
+    transition: opacity 2s ease;
+	height: calc(100% - 3px);
+	margin: auto;
+}
+.WebcamWindow.noWebcam video {
+    opacity: 0;
+}
+/*
+    body.noWebcam .ChatWindow {
+    bottom: 0px;
+}
+*/

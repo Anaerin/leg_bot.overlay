@@ -1,0 +1,37 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Nobody sees this anyway.</title>
+    <link type="text/css" rel="stylesheet" href="css/stylesheet.css" />
+	<script language="Javascript" type="text/javascript" src="js/adapter.js"></script>
+	<script language="Javascript" type="text/javascript" src="js/StreamerCounts.js"></script>
+    <script language="Javascript" type="text/javascript" src="js/secrets.js"></script>
+</head>
+<body>
+    <div class="ScreenTitle">Anaerin Stream OS &nbsp; 8,388,608 graphics mem, 16,777,216 other mem<span class="countdownHolder" onclick="toggleWebcam();">Updating counters in <span id="CountDown">0</span> seconds</span></div>
+    <div class="Window GameWindow Active" id="gameWindow"><header id="gameName">Game Capture</header></div>
+    <div class="Window AFKWindow Hidden" id="afkWindow"><header>AFK Card</header><div class="AFKImage"></div></div>
+    <div class="InfoWindow Window"><header>Info, Statistics</header>
+        <div class="InfoLine">Currently Playing: <span id="Game"></span></div>
+        <div class="CounterContainer">
+            <fieldset class="EmptyFieldset"><legend>Followers</legend><marquee id="followerList"></marquee></fieldset>
+            <fieldset class="EmptyFieldset"><legend>Donations</legend><marquee id="donatorList"></marquee></fieldset>
+            <fieldset><legend>Bad Puns</legend><counter data-name="badpun" id="badpun">0</counter></fieldset>
+            <fieldset><legend>Deaths</legend><counter data-name="death" id="death">0</counter></fieldset>
+        </div>
+    </div>
+    <div class="ChatWindow Window"><header>Chat</header><iframe src="http://www.nightdev.com/hosted/obschat/?style=light&channel=anaerin&bot_activity=false"></iframe></div>
+    <div class="WebcamWindow Window" id="webcamWindow"><header>Webcam</header><video id="webcam" style="width: 100%;" autoplay="autoplay"></video></div>
+        <div id="alert" class=""></div>
+    <script language="JavaScript" type="text/javascript">
+        // loaded from secrets.js, because I don't want to publish it for all to see, obviously.
+        // var streamtipAccessToken = 'things!'
+        streamer = new StreamCounters("anaerin");
+        followers = new FollowerOverlay("anaerin");
+        followers.followerListObj = document.getElementById("followerList");
+        donators = new DonationUpdater(streamtipAccessToken);
+    </script>
+</body>
+</html>
