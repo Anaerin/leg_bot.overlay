@@ -1,5 +1,7 @@
 ﻿var WebSocketServer = require('websocket').server,
 	http = require('http'),
+	https = require('https'),
+	querystring = require('querystring'),
 	url = require("url"),
 	path = require("path"),
 	fs = require("fs"),
@@ -57,6 +59,31 @@ function originIsAllowed(origin) {
     return true;
 }
 
+function PostAuthToken(ClientID, ClientSecret, AuthorizationCode) {
+	var requestData = querystring.stringify({
+		'client_id': ClientID,
+		'client_secret': ClientSecret,
+		'grant_type': 'authorization_code',
+		'redirect_url': 'http://localhost:8000/OverlayControl.html',
+		'code': AuthorizationCode
+	});
+	var request = https.request({
+		method: 'post',
+		hostname: 'streamtip.com',
+		port: 443,
+		path: '/api/oauth2/token',
+		headers: {
+			'Content-Type': 'application/x-www-form-urlencoded',
+			'Content-Length': Buffer.byteLength(requestData)
+		}
+	}, function (res) {
+		res.setEncoding('utf8');
+		res.on('data', function (chunk) {
+			//Here's hoping we don't get multi-chunk data.
+		})
+	}
+}
+
 wsServer.on('request', function (request) {
     if (!originIsAllowed(request.origin)) {
         // Make sure we only accept requests from an allowed origin
@@ -71,15 +98,33 @@ wsServer.on('request', function (request) {
     connection.on('message', function (message) {
         if (message.type === 'utf8') {
             console.log('Received Message: ' + message.utf8Data);
-            clients.forEach(function (client) {
+			try {
+				var data = JSON.parse(message.utf8Data);
+			} catch (e) {
+				//do nothing
+			}
+			if (data) {
+				if (data.name == "CORSDefeater") {
+					PostAuthToken(data.data.ClientID, data.data.ClientSecret, data.data.AuthorizationCode);
+				}
+			}
+			clients.forEach(function (client) {
                 //Send it back to everyone.
-                client.sendUTF(message.utf8Data);
+				console.log('Sending to client.');
+				client.sendUTF(message.utf8Data);
             });
             //connection.sendUTF(message.utf8Data);
         }
     });
     connection.on('close', function (reasonCode, description) {
         console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
-        clients.splice(clientIndex, 1);
+		var index = 0;
+		for (var i = 0; i < clients.length; i++) {
+			if (clients[i] === connection) {
+				index = i;
+				break;
+			}
+		}
+		clients.splice(index, 1);
     });
 });

@@ -26,12 +26,72 @@
     <div class="WebcamWindow Window" id="webcamWindow"><header>Webcam</header><video id="webcam" style="width: 100%;" autoplay="autoplay"></video></div>
         <div id="alert" class=""></div>
     <script language="JavaScript" type="text/javascript">
-        // loaded from secrets.js, because I don't want to publish it for all to see, obviously.
-        // var streamtipAccessToken = 'things!'
-        streamer = new StreamCounters("anaerin");
-        followers = new FollowerOverlay("anaerin");
+        //Set up framework objects.
+		var alertHandler = new AlertHandler()
+		alertHandler.alertObject = document.getElementById("alert");
+
+		var streamer = new StreamCounters("anaerin");
+		streamer.countDownItem = document.getElementById("CountDown");
+		streamer.gameNameItem = document.getElementById("gameName");
+
+		var followers = new FollowerOverlay("anaerin");
         followers.followerListObj = document.getElementById("followerList");
-        donators = new DonationUpdater(streamtipAccessToken);
+		followers.alertHandler = alertHandler;
+
+		var socketCommunication = new SocketCommunication();
+
+		socketCommunication.bindCommand("TestDonation", function (value) {
+			alertHandler.addToQueue({ message: value.username + " just donated " + value.currencySymbol + value.amount + "!", type: "donation" });
+		});
+
+		socketCommunication.bindCommand("TestFollow", function (value) {
+			alertHandler.addToQueue({ message: value.username + " just followed!", type: "follow" });
+		});
+
+		socketCommunication.bindCommand("ShowWebcam", function (value) {
+			document.getElementById("webcamWindow").classList.remove("noWebcam");
+		});
+
+		socketCommunication.bindCommand("HideWebcam", function (value) {
+			document.getElementById("webcamWindow").classList.add("noWebcam");
+		});
+
+		socketCommunication.bindCommand("UpdateComment", function (value) {
+			document.getElementById("Game").innerHTML = value;
+		})
+
+		socketCommunication.bindCommand("SwitchToAFK", function (value) {
+			document.getElementById("gameWindow").classList.remove("Active");
+			document.getElementById("webcamWindow").classList.remove("Active");
+			document.getElementById("webcamWindow").classList.remove("Booth");
+			document.getElementById("afkWindow").classList.add("Active");
+			document.getElementById("afkWindow").classList.remove("Hidden");
+		});
+
+		socketCommunication.bindCommand("SwitchToGame", function (value) {
+			document.getElementById("afkWindow").classList.remove("Active");
+			document.getElementById("afkWindow").classList.add("Hidden");
+			document.getElementById("webcamWindow").classList.remove("Active");
+			document.getElementById("webcamWindow").classList.remove("Booth");
+			document.getElementById("gameWindow").classList.add("Active");
+
+		});
+
+		socketCommunication.bindCommand("SwitchToBooth", function (value) {
+			document.getElementById("gameWindow").classList.remove("Active");
+			document.getElementById("afkWindow").classList.remove("Active");
+			document.getElementById("afkWindow").classList.add("Hidden");
+			document.getElementById("webcamWindow").classList.add("Active");
+			document.getElementById("webcamWindow").classList.add("Booth");
+		});
+
+		var donators = new DonationUpdater(streamtipClientID, streamtipClientSecret, streamtipRedirectURL);
+		donators.alertHandler = alertHandler;
+		donators.socketCommunication = socketCommunication;
+		donators.connect();
+
+		var webcam = new DisplayWebcam(document.getElementById("webcam"));
+
     </script>
 </body>
 </html>

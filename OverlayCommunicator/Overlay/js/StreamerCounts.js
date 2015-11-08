@@ -1,7 +1,44 @@
+function AlertHandler() {
+	this.queue = [];
+	this.playing = false;
+	this.alertObject;
+	this.showAlert = function () {
+		this.alertObject.classList.add("visible");
+	}
+	
+	this.hideAlert = function (callback) {
+		this.alertObject.classList.remove("visible");
+	}
+	this.checkQueue = function () {
+		if (!this.queue.length || this.playing) return;
+		this.displayAlert(this.queue.shift());
+	}
+	this.timer = false;
+	this.displayAlert = function (message) {
+		this.playing = true;
+		this.alertObject.innerHTML = message.message;
+		this.alertObject.className = message.type;
+		this.showAlert();
+		this.timer = setTimeout(function (ref) {
+			ref.hideAlert();
+			ref.timer = setTimeout(function (ref) {
+				ref.playing = false;
+				ref.checkQueue();
+			}, 2100, ref);
+		}, 10000, this);
+	}
+	this.addToQueue = function (data) {
+		this.queue.push(data);
+		this.checkQueue();
+	}
+}
+
 function StreamCounters(streamerName) {
 	this.numUpdates = 0;
 	this.failedTimes = 0;
 	this.updateTime = 0;
+	this.countDownItem;
+	this.gameNameItem;
 	this.onStateChange = function () {
 		xHR = this;
 		me = this.parent;
@@ -51,9 +88,8 @@ function StreamCounters(streamerName) {
 			ref = this;
 		}
 		ref.updateTime--;
-		var countdownItem = document.getElementById("CountDown");
-		if (countdownItem) {
-			countdownItem.innerHTML = ref.updateTime;
+		if (ref.countdownItem) {
+			ref.countdownItem.innerHTML = ref.updateTime;
 		}
 		if (ref.updateTime < 1) {
 			ref.updateTime = 60;
@@ -79,8 +115,8 @@ function StreamCounters(streamerName) {
 	this.populateCounters = function (result) {
 		this.numUpdates++;
 		if (result.hasOwnProperty("game") && result.game != "") {
-			if (document.getElementById("gameName")) {
-				document.getElementById("gameName").innerHTML = result.game;
+			if (this.gameNameItem) {
+				this.gameNameItem.innerHTML = result.game;
 			}
 		}
 		counters = document.getElementsByTagName("counter");
@@ -101,7 +137,7 @@ function StreamCounters(streamerName) {
 
 function FollowerOverlay(streamer) {
 	this.streamer = streamer;
-	this.alerter = alertHandler;
+	this.alertHandler;
 	this.logging = true;
 	this.followers = {};
 	this.followerListObj;
@@ -135,7 +171,7 @@ function FollowerOverlay(streamer) {
 					result.follows.forEach(function (follower) {
 						if (!xHR.fetchAll) {
 							if (!ref.followers.hasOwnProperty(follower.user.name)) {
-								ref.alerter.addToQueue({ message: follower.user.name + " just followed!", type: "follow" });
+								ref.alertHandler.addToQueue({ message: follower.user.name + " just followed!", type: "follow" });
 							}
 						}
 						ref.followers[follower.user.name] = true;
@@ -156,13 +192,23 @@ function FollowerOverlay(streamer) {
 	this.interval = setInterval(this.doUpdate, 60000, this);
 }
 
-var SocketCommunication = function () {
+function SocketCommunication() {
 	this.webSocket = new WebSocket("ws://localhost:8000", "overlay");
 	this._commands = {};
-	this.webSocket.addEventListener("open", function (event) {
-
-	});
+	this.queue = [];
 	var my = this;
+	this.webSocket.addEventListener("open", function (event) {
+		//Drain queue.
+		console.log("Connected, I guess.");
+		if (my.queue.length > 0) {
+			console.log("Got a backlog, sending");
+			my.queue.forEach(function (item) {
+				console.log("Sending", item);
+				this.webSocket.send(item);
+			}, my);
+		}
+	});
+	
 	this.webSocket.addEventListener("message", function (event) {
 		if (event.data == "beat") return;
 		try {
@@ -178,35 +224,73 @@ var SocketCommunication = function () {
 				}
 			});
 		} else {
-			my._commands[result.name](result.data);
+			if (my._commands[result.name]) {
+				my._commands[result.name](result.data);
+			}
 		}
 	});
 	
 	this.webSocket.addEventListener("close", function (event) {
-		my.webSocket = new WebSocket("ws://localhost:8000");
+		my.webSocket = new WebSocket("ws://localhost:8000", "overlay");
 	});
-
+	
 	this.bindCommand = function (command, callback) {
 		my._commands[command] = callback;
 	}
-
+	
 	this.send = function (data) {
-		my.webSocket.send(JSON.stringify(data));
+		var dataStore = data;
+		console.log("Sending...", data);
+		if (this.webSocket) {
+			if (this.webSocket.readyState == 1) {
+				console.log("Sending now...");
+				this.webSocket.send(JSON.stringify(dataStore));
+			} else {
+				console.log("Socket isn't connected. Sending later...");
+				this.queue.push(JSON.stringify(dataStore));
+			}
+		} else {
+			console.log("Socket doesn't exist. Sending later.");
+			this.queue.push(JSON.stringify(dataStore));
+		}
 	}
 }
 
-var DonationUpdater = function (streamtipAPIKey) {
-	this.APIKey = streamtipAPIKey;
+function DonationUpdater(streamtipClientID, streamtipClientSecret, streamtipRedirectURL) {
 	this.donations = [];
 	this.donationList = "";
 	this.donationListObj;
-	this.alerter = alertHandler;
-	this.streamTipSocket = new WebSocket('wss://streamtip.com/ws?access_token=' + this.APIKey);
-	this.streamTipSocket.onmessage = function (message) {
-		var event = JSON.parse(message.data);
-		this.donations.push(event);
-		this.alerter.addToQueue({ message: event.username + " just donated " + event.currencySymbol + event.amount + "!", type: "donation" });
-		this.updateDonationList();
+	this.alertHandler;
+	this.socketCommunication;
+	this.clientID = streamtipClientID;
+	this.clientSecret = streamtipClientSecret;
+	this.redirectURL = streamtipRedirectURL;
+	var my = this;
+	this.connect = function () {
+		this.socketCommunication.bindCommand("AuthCode", function (value) {
+			this.doAuth(value);
+		});
+		if (this.APIKey) {
+			this.streamTipSocket = new WebSocket('wss://streamtip.com/ws?access_token=' + this.APIKey);
+			this.streamTipSocket.onmessage = function (message) {
+				var event = JSON.parse(message.data);
+				this.donations.push(event);
+				this.alertHandler.addToQueue({ message: event.username + " just donated " + event.currencySymbol + event.amount + "!", type: "donation" });
+				this.updateDonationList();
+			}
+			this.streamTipSocket.onclose = function (err) {
+				if (err.code === 4010) {
+					console.log("Streamtip Auth failed");
+					my.askForAuth();
+				} else if (err.code === 4290) {
+					console.log("Streamtip rate limited");
+				} else if (err.code === 4000) {
+					console.log("Streamtip bad request");
+				}
+			}
+		} else {
+			this.askForAuth();
+		}
 	}
 	this.updateDonationList = function () {
 		var donationTempList = [];
@@ -216,126 +300,105 @@ var DonationUpdater = function (streamtipAPIKey) {
 		this.donationList = donationTempList.join(", ");
 		if (this.donationListObj) this.donationListObj.innerHTML = this.donationList;
 	}
-
-	this.streamTipSocket.onclose = function (err) {
-		if (err.code === 4010) {
-			console.log("Streamtip Auth failed");
-		} else if (err.code === 4290) {
-			console.log("Streamtip rate limited");
-		} else if (err.code === 4000) {
-			console.log("Streamtip bad request");
+	this.askForAuth = function () {
+		this.socketCommunication.send({ name: "Auth", clientID: this.clientID, redirectURL: this.redirectURL });
+	}
+	this.doAuth = function (authCode) {
+		// Massive cheats - CORS says no. We ask our server instead
+		console.log("Got an Auth code - get the token");
+		
+		var serverRequest = {
+			name: "CORSDefeater",
+			data: {
+				ClientID: my.clientID,
+				ClientSecret: my.clientSecret,
+				AuthorizationCode: authCode,
+				RedirectURL: my.redirectURL
+			}
+		};
+		this.socketCommunication.send(serverRequest);
+		/*
+		 * var xHR = new XMLHttpRequest();
+		xHR.parent = my;
+		var url = "https://streamtip.com/api/oauth2/token";
+		var postData = new FormData();
+		postData.append("client_id", my.clientID);
+		postData.append("client_secret", my.clientSecret);
+		postData.append("grant_type", "authorization_code");
+		postData.append("redirect_uri", my.redirectURL);
+		postData.append("code", authCode);
+		xHR.onload = my.onStateChange;
+		xHR.open("POST", url, true);
+		//xHR.content
+		console.log("Built the request", postData);
+		xHR.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+		//xHR.setRequestHeader("Authorization", "Bearer " + authCode);
+		console.log("Sending data");
+		xHR.send(postData);
+		 */
+	}
+	
+	this.onStateChange = function (xHR) {
+		console.log("Loaded auth...");
+		my = this.parent;
+		if (xHR.status == 200) {
+			try {
+				var result = JSON.parse(xHR.responseText);
+			} catch (e) {
+				//Got invalid JSON for some reason.
+				my.alertHandler.addToQueue({ message: "Error parsing StreamTip's Auth JSON response", type: "error" })
+				console.log("Couldn't parse response");
+				return;
+			}
+		} else {
+			//An error occured.
+			my.alertHandler.addToQueue({ message: "Error from StreamTip Auth: " + xHR.status, type: "error" })
+			console.log("StreamTip Auth Error:", xHR.status);
+			return;
 		}
+		if (result.access_token) {
+			console.log("Got the token", result.access_token);
+			my.APIKey = result.access_token;
+		} else {
+			console.log("StreamTip won't give me a token!");
+			my.alertHandler.addToQueue({ message: "StreamTip did not return an access token", type: "error" });
+		}
+		my.connect();
 	}
 }
 
-var webcam;
-var webcamConstraints = { audio: false, video: { width: { min: 320, ideal: 1280 }, height: { min: 240, ideal: 720 } } };
-var webcamCallback = function (mediastream) {
-	console.log("Got media stream");
-	var video = document.querySelector('video');
-	video.src = window.URL.createObjectURL(mediastream);
-	video.onloadedmetadata = function (e) {
-		video.play();
-	};
-}
-var navigator = window.navigator;
-navigator.getMedia = (navigator.getUserMedia ||
+function DisplayWebcam(webcamObject) {
+	this.webcamObject = webcamObject;
+	this.webcam;
+	this.webcamConstraints = { audio: false, video: { width: { min: 320, ideal: 1280 }, height: { min: 240, ideal: 720 } } };
+	var my = this;
+	this.webcamCallback = function (mediastream) {
+		console.log("Got media stream");
+		my.webcamObject.src = window.URL.createObjectURL(mediastream);
+		my.webcamObject.onloadedmetadata = function (e) {
+			this.play();
+		};
+	}
+	var navigator = window.navigator;
+	navigator.getMedia = (navigator.getUserMedia ||
                          navigator.webkitGetUserMedia ||
                          navigator.mozGetUserMedia ||
                          navigator.msGetUserMedia);
-if (navigator.mediaDevices) {
-	console.log("Got mediaDevices, attempting to open with promise");
-	webcam = navigator.mediaDevices.getUserMedia(webcamConstraints).then(webcamCallback, function (err) {
-		console.log("Permissions Error", err);
-	});
-} else if (navigator.getMedia) {
-	console.log("Attempting to open webcam...");
-	webcam = navigator.getMedia(webcamConstraints, webcamCallback, function (err) {
-		console.log("Legacy permissions error", err);
-	});
-} else {
-	console.log("Unable to get webcam - no getUserMedia function");
-}
-
-var AlertHandler = function () {
-	this.queue = [];
-	this.playing = false;
-	this.showAlert = function () {
-		document.getElementById("alert").classList.add("visible");
-	}
-	
-	this.hideAlert = function (callback) {
-		document.getElementById("alert").classList.remove("visible");
-	}
-	this.checkQueue = function () {
-		if (!this.queue.length || this.playing) return;
-		this.displayAlert(this.queue.shift());
-	}
-	this.timer = false;
-	this.displayAlert = function (message) {
-		this.playing = true;
-		document.getElementById("alert").innerHTML = message.message;
-		document.getElementById("alert").className = message.type;
-		this.showAlert();
-		this.timer = setTimeout(function (ref) {
-			ref.hideAlert();
-			ref.timer = setTimeout(function (ref) {
-				ref.playing = false;
-				ref.checkQueue();
-			}, 2100, ref);
-		}, 10000, this);
-	}
-	this.addToQueue = function(data) {
-		this.queue.push(data);
-		this.checkQueue();
+	if (navigator.mediaDevices) {
+		console.log("Got mediaDevices, attempting to open with promise");
+		this.webcam = navigator.mediaDevices.getUserMedia(this.webcamConstraints).then(this.webcamCallback, function (err) {
+			console.log("Permissions Error", err);
+		});
+	} else if (navigator.getMedia) {
+		console.log("Attempting to open webcam...");
+		this.webcam = navigator.getMedia(this.webcamConstraints, this.webcamCallback, function (err) {
+			console.log("Legacy permissions error", err);
+		});
+	} else {
+		console.log("Unable to get webcam - no getUserMedia function");
 	}
 }
 
-var alertHandler = new AlertHandler();
 
-var socketCommunication = new SocketCommunication();
 
-socketCommunication.bindCommand("TestDonation", function (value) {
-	alertHandler.addToQueue({ message: value.username + " just donated " + value.currencySymbol + value.amount + "!", type: "donation" });
-});
 
-socketCommunication.bindCommand("TestFollow", function (value) {
-	alertHandler.addToQueue({ message: value.username + " just followed!", type: "follow" });
-});
-
-socketCommunication.bindCommand("ShowWebcam", function (value) {
-	document.getElementById("webcamWindow").classList.remove("noWebcam");
-});
-
-socketCommunication.bindCommand("HideWebcam", function (value) {
-	document.getElementById("webcamWindow").classList.add("noWebcam");
-});
-
-socketCommunication.bindCommand("UpdateComment", function (value) {
-	document.getElementById("Game").innerHTML = value;
-})
-
-socketCommunication.bindCommand("SwitchToAFK", function (value) {
-	document.getElementById("gameWindow").classList.remove("Active");
-	document.getElementById("webcamWindow").classList.remove("Active");
-	document.getElementById("webcamWindow").classList.remove("Booth");
-	document.getElementById("afkWindow").classList.add("Active");
-	document.getElementById("afkWindow").classList.remove("Hidden");
-});
-
-socketCommunication.bindCommand("SwitchToGame", function (value) {
-	document.getElementById("afkWindow").classList.remove("Active");
-	document.getElementById("afkWindow").classList.add("Hidden");
-	document.getElementById("webcamWindow").classList.remove("Active");
-	document.getElementById("webcamWindow").classList.remove("Booth");
-	document.getElementById("gameWindow").classList.add("Active");
-	
-});
-
-socketCommunication.bindCommand("SwitchToBooth", function (value) {
-	document.getElementById("gameWindow").classList.remove("Active");
-	document.getElementById("afkWindow").classList.remove("Active");
-	document.getElementById("afkWindow").classList.add("Hidden");
-	document.getElementById("webcamWindow").classList.add("Active");
-	document.getElementById("webcamWindow").classList.add("Booth");
-});

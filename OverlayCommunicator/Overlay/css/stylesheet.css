@@ -184,13 +184,17 @@ fieldset legend {
     top: 0px;
 }
 #alert.follow {
-    background-color: red;
+    background-color: blue;
     color: white;
 }
 #alert.donation {
     background-color: yellow;
     color: black;
     text-shadow: none;
+}
+#alert.error {
+	background-color: red;
+	color: white;
 }
 fieldset marquee {
     margin: 0;
