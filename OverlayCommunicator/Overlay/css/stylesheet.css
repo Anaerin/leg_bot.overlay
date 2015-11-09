@@ -150,6 +150,7 @@ body {
 .EmptyFieldset {
     width: 33%;
     height: 35px;
+	overflow: hidden;
 }
 fieldset {
     border-width: 4px;

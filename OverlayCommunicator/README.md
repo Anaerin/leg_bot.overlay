@@ -1,5 +1,5 @@
-# OverlayCommunicator
-This is a series of objects to make HTML overlay creation and control a lot easier.
+﻿# OverlayCommunicator
+This is a series of objects, and a tiny node.js websockets server, to make HTML overlay creation and control a lot easier.
 
 So, in source code order, they are:
 

@@ -231,6 +231,7 @@ function SocketCommunication() {
 	});
 	
 	this.webSocket.addEventListener("close", function (event) {
+		//Connection died... Re-open it.
 		my.webSocket = new WebSocket("ws://localhost:8000", "overlay");
 	});
 	
@@ -256,21 +257,22 @@ function SocketCommunication() {
 	}
 }
 
-function DonationUpdater(streamtipClientID, streamtipClientSecret, streamtipRedirectURL) {
+function DonationUpdater() {
 	this.donations = [];
 	this.donationList = "";
 	this.donationListObj;
 	this.alertHandler;
 	this.socketCommunication;
-	this.clientID = streamtipClientID;
-	this.clientSecret = streamtipClientSecret;
-	this.redirectURL = streamtipRedirectURL;
 	var my = this;
 	this.connect = function () {
-		this.socketCommunication.bindCommand("AuthCode", function (value) {
-			this.doAuth(value);
+		console.log("Opening Connection...");
+		this.socketCommunication.bindCommand("AuthToken", function (value) {
+			console.log("Got API Key", value.APIKey);
+			my.APIKey = value.APIKey;
+			my.connect();
 		});
 		if (this.APIKey) {
+			console.log("We have an API Key, opening websocket...");
 			this.streamTipSocket = new WebSocket('wss://streamtip.com/ws?access_token=' + this.APIKey);
 			this.streamTipSocket.onmessage = function (message) {
 				var event = JSON.parse(message.data);
@@ -289,6 +291,7 @@ function DonationUpdater(streamtipClientID, streamtipClientSecret, streamtipRedi
 				}
 			}
 		} else {
+			console.log("No APIKey found, asking for one.");
 			this.askForAuth();
 		}
 	}
@@ -301,41 +304,7 @@ function DonationUpdater(streamtipClientID, streamtipClientSecret, streamtipRedi
 		if (this.donationListObj) this.donationListObj.innerHTML = this.donationList;
 	}
 	this.askForAuth = function () {
-		this.socketCommunication.send({ name: "Auth", clientID: this.clientID, redirectURL: this.redirectURL });
-	}
-	this.doAuth = function (authCode) {
-		// Massive cheats - CORS says no. We ask our server instead
-		console.log("Got an Auth code - get the token");
-		
-		var serverRequest = {
-			name: "CORSDefeater",
-			data: {
-				ClientID: my.clientID,
-				ClientSecret: my.clientSecret,
-				AuthorizationCode: authCode,
-				RedirectURL: my.redirectURL
-			}
-		};
-		this.socketCommunication.send(serverRequest);
-		/*
-		 * var xHR = new XMLHttpRequest();
-		xHR.parent = my;
-		var url = "https://streamtip.com/api/oauth2/token";
-		var postData = new FormData();
-		postData.append("client_id", my.clientID);
-		postData.append("client_secret", my.clientSecret);
-		postData.append("grant_type", "authorization_code");
-		postData.append("redirect_uri", my.redirectURL);
-		postData.append("code", authCode);
-		xHR.onload = my.onStateChange;
-		xHR.open("POST", url, true);
-		//xHR.content
-		console.log("Built the request", postData);
-		xHR.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-		//xHR.setRequestHeader("Authorization", "Bearer " + authCode);
-		console.log("Sending data");
-		xHR.send(postData);
-		 */
+		this.socketCommunication.send({ name: "Auth", data: ""});
 	}
 	
 	this.onStateChange = function (xHR) {
