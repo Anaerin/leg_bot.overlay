@@ -85,7 +85,7 @@
 			document.getElementById("webcamWindow").classList.add("Booth");
 		});
 
-		var donators = new DonationUpdater(streamtipClientID, streamtipClientSecret, streamtipRedirectURL);
+		var donators = new DonationUpdater();
 		donators.alertHandler = alertHandler;
 		donators.socketCommunication = socketCommunication;
 		donators.connect();

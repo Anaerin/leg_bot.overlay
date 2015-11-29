@@ -7,13 +7,16 @@ var WebSocketServer = require('websocket').server,
 	url = require("url"),
 	path = require("path"),
 	fs = require("fs"),
-	clients = [];
+    clients = [],
+    open = require("open");
 
 var contentTypesByExtension = {
 	'.html': "text/html",
 	'.css': "text/css",
 	'.js': "text/javascript"
 };
+
+
 
 var streamTipAPIKeys = {};
 
@@ -60,6 +63,8 @@ wsServer = new WebSocketServer({
 	// to accept it.
 	autoAcceptConnections: false
 });
+
+open("http://localhost:8000/OverlayControl.html");
 
 function originIsAllowed(origin) {
 	// put logic here to detect whether the specified origin is allowed.
