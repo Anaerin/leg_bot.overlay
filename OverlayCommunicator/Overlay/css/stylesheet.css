@@ -20,6 +20,7 @@ body {
     background-position: top right, top left;
     background-repeat: no-repeat, no-repeat;
     height: 19px;
+	line-height: 20px;
 }
 .Window {
     background-image: url("../images/Inactive/InactiveWindowFrameBottomLeft.gif"), url("../images/Inactive/InactiveWindowSizeAndScrollGadgets.gif"), url("../images/Inactive/InactiveWindowTitleBarSizingGadgets.gif"), url("../images/Inactive/InactiveWindowTitleBarCloseGadget.gif"), url("../images/Inactive/InactiveWindowTitleBarBackground.gif"), url("../images/Inactive/InactiveWindowFrameRightSide.gif"), url("../images/Inactive/InactiveWindowFrameBottomBar.gif"), url("../images/Inactive/InactiveWindowFrameLeft.gif");
@@ -27,16 +28,19 @@ body {
     background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat-x, repeat-y, repeat-x, repeat-y;
     padding: 24px 36px 15px 10px;
     background-color: #aaa;
+	position: relative;
 }
 .Window.Active {
 	background-image: url("../images/Active/WindowFrameBottomLeft.gif"), url("../images/Active/WindowSizeAndScrollGadgets.gif"), url("../images/Active/WindowTitleBarSizingGadgets.gif"), url("../images/Active/WindowTitleBarCloseGadget.gif"), url("../images/Active/WindowTitleBarBackground.gif"), url("../images/Active/WindowFrameRightSide.gif"), url("../images/Active/WindowFrameBottomBar.gif"), url("../images/Active/WindowFrameLeft.gif");    
 }
 .Window header {
-    margin-top: -22px;
-    padding-left: 35px;
     padding-top: 1px;
     color: black;
-	
+	position: absolute;
+	top: 0px;
+	left: 45px;
+	width: calc(100% - 45px);
+	line-height: 20px;
     /* text-shadow: 2px 2px 0px black; */
 }
 .Window.Active header {
@@ -64,13 +68,18 @@ body {
 }
 .AFKImage {
     width: 100%;
-    height: 100%;
+    height: calc(100% - 102px);
     background-image: url("../images/insertdisk.gif");
     background-position: center center;
     background-repeat: no-repeat;
     background-color: #441144;
+	overflow: hidden;
     margin: 0;
     padding: 0;
+	padding-top: 100px;
+	text-align: center;
+	font-size: 6em;
+	color: white;
 }
 .ChatWindow {
     position: absolute;
@@ -78,14 +87,9 @@ body {
     top: 21px;
     width: 327px;
     bottom: 222px;
-    padding: 12px 30px 18px 4px;
+    padding: 16px 30px 16px 4px;
     transition: bottom ease 1s;
     z-index: 4;
-}
-.ChatWindow header {
-    margin-top: -9px;
-    padding-left: 39px;
-    height: 12px;
 }
 .ChatWindow iframe {
     border: none;

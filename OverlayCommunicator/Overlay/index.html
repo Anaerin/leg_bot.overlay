@@ -12,7 +12,7 @@
 <body>
     <div class="ScreenTitle">Anaerin Stream OS &nbsp; 8,388,608 graphics mem, 16,777,216 other mem<span class="countdownHolder" onclick="toggleWebcam();">Updating counters in <span id="CountDown">0</span> seconds</span></div>
     <div class="Window GameWindow Active" id="gameWindow"><header id="gameName">Game Capture</header></div>
-    <div class="Window AFKWindow Hidden" id="afkWindow"><header>AFK Card</header><div class="AFKImage"></div></div>
+    <div class="Window AFKWindow Hidden" id="afkWindow"><header>AFK Card</header><div class="AFKImage" id="AFKMessage"></div></div>
     <div class="InfoWindow Window"><header>Info, Statistics</header>
         <div class="InfoLine">Currently Playing: <span id="Game"></span></div>
         <div class="CounterContainer">
@@ -58,12 +58,17 @@
 
 		socketCommunication.bindCommand("UpdateComment", function (value) {
 			document.getElementById("Game").innerHTML = value;
-		})
+		});
+
+		socketCommunication.bindCommand("UpdateAFK", function (value) {
+			document.getElementById("AFKMessage").innerHTML = value;
+		});
 
 		socketCommunication.bindCommand("SwitchToAFK", function (value) {
 			document.getElementById("gameWindow").classList.remove("Active");
 			document.getElementById("webcamWindow").classList.remove("Active");
 			document.getElementById("webcamWindow").classList.remove("Booth");
+			document.getElementById("webcamWindow").classList.add("noWebcam");
 			document.getElementById("afkWindow").classList.add("Active");
 			document.getElementById("afkWindow").classList.remove("Hidden");
 		});

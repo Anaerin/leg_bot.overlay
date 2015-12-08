@@ -87,10 +87,10 @@ function StreamCounters(streamerName) {
 		} else {
 			ref = this;
 		}
-		ref.updateTime--;
-		if (ref.countdownItem) {
-			ref.countdownItem.innerHTML = ref.updateTime;
-		}
+        ref.updateTime--;
+        if (ref.countDownItem) {
+            ref.countDownItem.innerHTML = ref.updateTime;
+        }
 		if (ref.updateTime < 1) {
 			ref.updateTime = 60;
 			ref.refreshCounters(ref);
