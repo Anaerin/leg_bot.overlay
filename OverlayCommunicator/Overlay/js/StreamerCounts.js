@@ -38,7 +38,40 @@ function StreamCounters(streamerName) {
 	this.failedTimes = 0;
 	this.updateTime = 0;
 	this.countDownItem;
-	this.gameNameItem;
+    this.gameNameItem;
+    this.prependDashToGame = false;
+    this.ws;
+    this.bindWebSocket = function () {
+        var me = this;
+        this.ws = new WebSocket("ws://ghostoflegbot.website/ws/" + streamerName);
+        this.ws.on('close', function (err) {
+            me.bindWebSocket();
+        });
+        this.ws.on('message', function (message) {
+            var data = JSON.parse(message);
+            switch (data.action) {
+                case "StatChanged":
+                    var statHolders = document.querySelectorAll("counter[data-name=" + data.stat + "]");
+                    for (var i = 0; i < statHolders.length; i++) {
+                        statHolders[i].innerHTML = data.value;
+                    }
+                    break;
+                case "GameChanged":
+                    if (me.gameNameItem) {
+                        if (data.game != "" && me.prependDashToGame) {
+                            me.gameNameItem.innerHTML = " - " + data.game;
+                        } else {
+                            me.gameNameItem.innerHTML = data.game;
+                        }
+                    }
+                    break;
+                default:
+                    console.log("Erm... I don't know what to do with this", data);
+                    break;
+            }
+        });
+    }
+    this.bindWebSocket();
 	this.onStateChange = function () {
 		xHR = this;
 		me = this.parent;
@@ -114,10 +147,16 @@ function StreamCounters(streamerName) {
 	}
 	this.populateCounters = function (result) {
 		this.numUpdates++;
-		if (result.hasOwnProperty("game") && result.game != "") {
-			if (this.gameNameItem) {
-				this.gameNameItem.innerHTML = result.game;
-			}
+        if (result.hasOwnProperty("game"))
+            if (result.game != "") {
+                if (this.gameNameItem) {
+                    this.gameNameItem.innerHTML = result.game;
+                }
+            } else {
+                if (this.gameNameItem) {
+                    this.gameNameItem.innerHTML = "";
+                }
+            }
 		}
 		counters = document.getElementsByTagName("counter");
 		if (result.hasOwnProperty('counts')) {
