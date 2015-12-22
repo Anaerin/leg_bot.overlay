@@ -44,11 +44,12 @@ function StreamCounters(streamerName) {
     this.bindWebSocket = function () {
         var me = this;
         this.ws = new WebSocket("ws://ghostoflegbot.website/ws/" + streamerName);
-        this.ws.on('close', function (err) {
+        //this.ws = new WebSocket("ws://localhost:3000/ws/" + streamerName);
+        this.ws.addEventListener('close', function (err) {
             me.bindWebSocket();
         });
-        this.ws.on('message', function (message) {
-            var data = JSON.parse(message);
+        this.ws.addEventListener('message', function (message) {
+            var data = JSON.parse(message.data);
             switch (data.action) {
                 case "StatChanged":
                     var statHolders = document.querySelectorAll("counter[data-name=" + data.stat + "]");
@@ -140,14 +141,15 @@ function StreamCounters(streamerName) {
 		xHR = null;
 		xHR = new XMLHttpRequest();
 		xHR.parent = ref;
-		var url = "http://ghostoflegbot.website/api/channel/" + streamerName;
+        var url = "http://ghostoflegbot.website/api/channel/" + streamerName;
+        //var url = "http://localhost:3000/api/channel/" + streamerName;
 		xHR.onreadystatechange = ref.onStateChange;
 		xHR.open("GET", url, true);
 		xHR.send();
 	}
 	this.populateCounters = function (result) {
 		this.numUpdates++;
-        if (result.hasOwnProperty("game"))
+        if (result.hasOwnProperty("game")) {
             if (result.game != "") {
                 if (this.gameNameItem) {
                     this.gameNameItem.innerHTML = result.game;
