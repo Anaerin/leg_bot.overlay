@@ -108,11 +108,11 @@ function PostAuthToken(AuthorizationCode, Refresh) {
 			if (result) {
 				console.log('Got Auth Token.', result.access_token, "sending...");
 				var now = new Date(Date.now());
-				streamTipAPIKey.AccessToken = result.access_token;
-				streamTipAPIKey.RefreshToken = result.refresh_token;
-				streamTipAPIKey.AccessTokenExpires = now + (result.expires_in * 1000);
-				streamTipAPIKey.RefreshTokenExpires = now + 2592000000;
-				send({ name: "AuthToken", data: { APIKey: streamTipAPIKey.AccessToken } });
+				streamTipAPIKeys.AccessToken = result.access_token;
+				streamTipAPIKeys.RefreshToken = result.refresh_token;
+				streamTipAPIKeys.AccessTokenExpires = now.getTime() + (result.expires_in * 1000);
+				streamTipAPIKeys.RefreshTokenExpires = now.getTime() + 2592000000;
+				send({ name: "AuthToken", data: { APIKey: streamTipAPIKeys.AccessToken } });
 				//Here's hoping we don't get multi-chunk data. The try/catch should sort it out, hopefully...
 			};
 		});
@@ -143,22 +143,28 @@ wsServer.on('request', function (request) {
 				//do nothing
 			}
 			if (data) {
-				if (data.name == "Auth") {
-					//We've been asked for an auth key. Let's see what we can do about that...
-					if (!streamTipAPIKeys || streamTipAPIKeys.RefreshTokenExpires < Date.now()) {
-						//No API key, or the refresh token has expired (It's been 30 days since last time? Yikes!), start from scratch.
-						send({ name: "AuthKeyRequest", clientID: secrets.streamtipClientID, redirectURL: secrets.streamtipRedirectURL });
-					} else if (streamTipAPIKeys && streamTipAPIKeys.RefreshTokenExpires > Date.now() && streamTipAPIKeys.AccessTokenExpires < Date.now()) {
-						//Access key has expired. Use the refresh key to get a new one.
-						PostAuthToken(streamTipAPIKeys.RefreshToken, true);
-					} else if (streamTipAPIKeys && streamTipAPIKeys.RefreshTokenExpires > Date.now() && streamTipAPIKeys.AccessTokenExpires > Date.now()) {
-						//We have a valid and in-date access key. Give it back.
-						send({ name: "AuthToken", data: { APIKey: streamTipAPIKey.AccessToken } });
-					} else {
-						//We should never get here.
-						console.warn("Something happened with the access token system... No idea what.");
-					}
-				} else {
+                if (data.name == "Auth") {
+                    //We've been asked for an auth key. Let's see what we can do about that...
+                    if (!streamTipAPIKeys.AccessToken && !streamTipAPIKeys.RefreshToken) {
+                        //No API keys, start from scratch.
+                        send({ name: "AuthKeyRequest", clientID: secrets.streamtipClientID, redirectURL: secrets.streamtipRedirectURL });
+                    } else if (streamTipAPIKeys.RefreshTokenExpires < Date.now()) {
+                        //The refresh token has expired (It's been 30 days since last time? Yikes!), start from scratch.
+                        send({ name: "AuthKeyRequest", clientID: secrets.streamtipClientID, redirectURL: secrets.streamtipRedirectURL });
+                    } else if (streamTipAPIKeys.AccessTokenExpires < Date.now()) {
+                        //Access key has expired. Use the refresh key to get a new one.
+                        PostAuthToken(streamTipAPIKeys.RefreshToken, true);
+                    } else if (streamTipAPIKeys.RefreshTokenExpires > Date.now() && streamTipAPIKeys.AccessTokenExpires > Date.now()) {
+                        //We have a valid and in-date access key. Give it back.
+                        send({ name: "AuthToken", data: { APIKey: streamTipAPIKeys.AccessToken } });
+                    } else {
+                        //We should never get here.
+                        console.warn("Something happened with the access token system... No idea what.");
+                        console.warn("Here's what we know: streamTipAPIKeys is ", streamTipAPIKeys);
+                    }
+                } else if (data.name == "AuthCode") {
+                    PostAuthToken(data.data, false);
+                } else {
 					send(message.utf8Data);
 				}
 			} else {
