@@ -14,6 +14,7 @@
     <div class="Window AFKWindow Hidden" id="afkWindow"><header>AFK Card</header><div class="AFKImage" id="AFKMessage"></div></div>
     <div class="InfoWindow Window"><header>Info, Statistics</header>
         <div class="InfoLine">Currently Playing: <span id="Game"></span></div>
+	<div class="ProgressLine"><progress id="progressBar"></progress><label for="progressBar" id="progressLabel"></label></div>
         <div class="CounterContainer">
             <fieldset class="EmptyFieldset"><legend>Followers</legend><marquee id="followerList"></marquee></fieldset>
             <fieldset class="EmptyFieldset"><legend>Donations</legend><marquee id="donatorList"></marquee></fieldset>
@@ -92,6 +93,8 @@
 		var donators = new DonationUpdater();
 		donators.alertHandler = alertHandler;
 		donators.socketCommunication = socketCommunication;
+		donators.progressObj = document.getElementById("progressBar");
+		donators.progressLabel = document.getElementById("progressLabel");
 		donators.connect();
 
 		var webcam = new DisplayWebcam(document.getElementById("webcam"));

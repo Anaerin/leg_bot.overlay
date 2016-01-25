@@ -220,6 +220,25 @@ fieldset marquee {
 .WebcamWindow.noWebcam video {
     opacity: 0;
 }
+.progressLine {
+	position: relative;
+	display: block;
+}
+progress {
+	height: 18px;
+	position: relative;
+	width: 100%;
+	display: block;
+}
+label[for="progressBar"] {
+	position: relative;
+	left: 0px;
+	height: 1em;
+	display: block;
+	margin-top: -16px;
+	width: 100%;
+	text-align: center;
+}
 /*
     body.noWebcam .ChatWindow {
     bottom: 0px;

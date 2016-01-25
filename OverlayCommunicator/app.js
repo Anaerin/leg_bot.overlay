@@ -16,7 +16,7 @@ var contentTypesByExtension = {
 	'.js': "text/javascript"
 };
 
-
+var bShotOnGoal = false;
 
 var streamTipAPIKeys = {};
 
@@ -71,6 +71,41 @@ function originIsAllowed(origin) {
 	return true;
 }
 
+function FetchGoalList() {
+    if (streamTipAPIKeys.AccessToken) {
+        var returnData = "";
+        var requestOptions = {
+            method: "get",
+            hostname: 'streamtip.com',
+            port: 443,
+            path: '/api/goals/active',
+            headers: {
+                'Authorization': 'Bearer ' + streamTipAPIKeys.AccessToken
+            }
+        }
+        var responseFunction = function (res) {
+            res.setEncoding('utf8');
+            console.log("Goal list returned",res.statusCode);
+            res.on('data', function (chunk) {
+                try {
+                    var result = JSON.parse(returnData + chunk);
+                } catch (e) {
+                    returnData += chunk;
+                }
+                if (result) {
+                    send({ name: "GoalData", data: result });
+                }
+            });
+        }
+        var request = https.request(requestOptions, responseFunction);
+        request.on('error', function (err) { console.error(err); });
+        request.end();
+    } else {
+        console.log("Tried to get Goal List without access token - Setting flag");
+        bShotOnGoal = true;
+    }
+}
+
 function PostAuthToken(AuthorizationCode, Refresh) {
 	var requestData = {
 		"client_id": secrets.streamtipClientID, 
@@ -112,7 +147,11 @@ function PostAuthToken(AuthorizationCode, Refresh) {
 				streamTipAPIKeys.RefreshToken = result.refresh_token;
 				streamTipAPIKeys.AccessTokenExpires = now.getTime() + (result.expires_in * 1000);
 				streamTipAPIKeys.RefreshTokenExpires = now.getTime() + 2592000000;
-				send({ name: "AuthToken", data: { APIKey: streamTipAPIKeys.AccessToken } });
+                send({ name: "AuthToken", data: { APIKey: streamTipAPIKeys.AccessToken } });
+                if (bShotOnGoal) {
+                    bShotOnGoal = false;
+                    FetchGoalList();
+                }
 				//Here's hoping we don't get multi-chunk data. The try/catch should sort it out, hopefully...
 			};
 		});
@@ -157,6 +196,8 @@ wsServer.on('request', function (request) {
                     } else if (streamTipAPIKeys.RefreshTokenExpires > Date.now() && streamTipAPIKeys.AccessTokenExpires > Date.now()) {
                         //We have a valid and in-date access key. Give it back.
                         send({ name: "AuthToken", data: { APIKey: streamTipAPIKeys.AccessToken } });
+                        goalAttempts = 0;
+                        FetchGoalList();
                     } else {
                         //We should never get here.
                         console.warn("Something happened with the access token system... No idea what.");
@@ -164,6 +205,8 @@ wsServer.on('request', function (request) {
                     }
                 } else if (data.name == "AuthCode") {
                     PostAuthToken(data.data, false);
+                    goalAttempts = 0;
+                    FetchGoalList();
                 } else {
 					send(message.utf8Data);
 				}
