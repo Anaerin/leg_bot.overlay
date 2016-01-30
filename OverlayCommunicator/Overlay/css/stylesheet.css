@@ -146,6 +146,7 @@ body {
     bottom: 22px;
     left: 8px;
     width: 1514px;
+	z-index: 100;
 }
 .InfoLine {
     font-size: 200%;
@@ -169,6 +170,9 @@ fieldset legend {
     text-shadow: 2px 2px 0px black;
     color: white;
     font-size: 50%;
+	z-index: 10;
+	padding-top: 4px;
+	padding-bottom: 4px;
 }
 #alert {
     position: absolute;
@@ -223,6 +227,7 @@ fieldset marquee {
 .progressLine {
 	position: relative;
 	display: block;
+	z-index: 1;
 }
 progress {
 	height: 18px;

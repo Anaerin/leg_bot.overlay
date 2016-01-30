@@ -85,7 +85,7 @@ function FetchGoalList() {
         }
         var responseFunction = function (res) {
             res.setEncoding('utf8');
-            console.log("Goal list returned",res.statusCode);
+            console.log("Goal list returned", res.statusCode);
             res.on('data', function (chunk) {
                 try {
                     var result = JSON.parse(returnData + chunk);
@@ -98,7 +98,7 @@ function FetchGoalList() {
             });
         }
         var request = https.request(requestOptions, responseFunction);
-        request.on('error', function (err) { console.error(err); });
+        request.on('error', function (err) { console.error("Goal Error:", err); });
         request.end();
     } else {
         console.log("Tried to get Goal List without access token - Setting flag");

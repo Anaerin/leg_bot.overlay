@@ -371,6 +371,8 @@ function DonationUpdater() {
                     if (event.data.goal) {
                         console.log("Goal included, updating");
                         ref.updateGoal(ref, event.data.goal);
+                    } else {
+                        ref.noGoal();
                     }
                 }
             }
@@ -394,9 +396,21 @@ function DonationUpdater() {
     }
     this.updateGoal = function (ref, goal) {
         if (ref.progressLabel && ref.progressObj) {
-            ref.progressLabel.innerHTML = "Donation goal: " + goal.title + " - " + goal.progress.percentage + "% (" + goal.progress.currencySymbol + goal.progress.amount + "/" + goal.progress.currencySymbol + goal.amount + ")";
-            ref.progressObj.max = goal.amount;
-            ref.progressObj.value = goal.progress.amount;
+            if (goal) {
+                ref.progressLabel.style.display = "";
+                ref.progressObj.style.display = "";
+                ref.progressLabel.innerHTML = "Donation goal: " + goal.title + " - " + goal.progress.percentage + "% (" + goal.progress.currencySymbol + goal.progress.amount + "/" + goal.progress.currencySymbol + goal.amount + ")";
+                ref.progressObj.max = goal.amount;
+                ref.progressObj.value = goal.progress.amount;
+            } else {
+                ref.noGoal();
+            }
+        }
+    }
+    this.noGoal = function () {
+        if (this.progressLabel && this.progressObj) {
+            this.progressLabel.style.display = "none";
+            this.progressObj.style.display = "none";
         }
     }
     
