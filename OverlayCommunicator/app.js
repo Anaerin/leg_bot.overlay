@@ -22,7 +22,8 @@ var streamTipAPIKeys = {};
 
 var server = http.createServer(function (request, response) {
 	console.log((new Date()) + ' Received request for ' + request.url);
-	var uri = url.parse(request.url).pathname, filename = path.join(process.cwd(), "Overlay", uri);
+    var uri = url.parse(request.url, true);
+    var wwwpath = uri.pathname, filename = path.join(process.cwd(), "Overlay", wwwpath);
 	fs.exists(filename, function (exists) {
 		if (!exists) {
 			response.writeHead(404, { "Content-Type": "text/plain" });
@@ -30,7 +31,11 @@ var server = http.createServer(function (request, response) {
 			response.end();
 			return;
 		}
-		
+        if (uri.query && uri.query["code"]) {
+            PostAuthToken(uri.query["code"], false);
+            goalAttempts = 0;
+            FetchGoalList();
+        }
 		if (fs.statSync(filename).isDirectory()) filename += '/index.html';
 		
 		fs.readFile(filename, "binary", function (err, file) {
@@ -203,10 +208,6 @@ wsServer.on('request', function (request) {
                         console.warn("Something happened with the access token system... No idea what.");
                         console.warn("Here's what we know: streamTipAPIKeys is ", streamTipAPIKeys);
                     }
-                } else if (data.name == "AuthCode") {
-                    PostAuthToken(data.data, false);
-                    goalAttempts = 0;
-                    FetchGoalList();
                 } else {
 					send(message.utf8Data);
 				}
