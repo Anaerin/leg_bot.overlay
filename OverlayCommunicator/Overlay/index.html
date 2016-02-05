@@ -40,6 +40,19 @@
 
 		var socketCommunication = new SocketCommunication();
 
+		socketCommunication.bindCommand("GetWebcams", function (value) {
+			if (webcam.webcams) {
+				webcam.webcams.forEach(function (newCam) {
+					socketCommunication.send({ name: "Webcam", CamName: newCam.label, CamID: newCam.id });
+				});
+			}
+		});
+
+		socketCommunication.bindCommand("SetWebcam", function (value) {
+			webcam.webcamID = value;
+			webcam.connectWebcam();
+		});
+
 		socketCommunication.bindCommand("TestDonation", function (value) {
 			alertHandler.addToQueue({ message: value.username + " just donated " + value.currencySymbol + value.amount + "!", type: "donation" });
 		});

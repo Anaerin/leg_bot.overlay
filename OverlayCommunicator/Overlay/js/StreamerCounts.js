@@ -430,7 +430,8 @@ function DonationUpdater() {
 function DisplayWebcam(webcamObject) {
     this.webcamObject = webcamObject;
     this.webcam;
-    this.webcamConstraints = { audio: false, video: { width: { min: 320, ideal: 1280 }, height: { min: 240, ideal: 720 } } };
+    this.webcams = [];
+    this.webcamID;
     var my = this;
     this.webcamCallback = function (mediastream) {
         console.log("Got media stream");
@@ -440,21 +441,54 @@ function DisplayWebcam(webcamObject) {
         };
     }
     var navigator = window.navigator;
-    navigator.getMedia = (navigator.getUserMedia ||
-                         navigator.webkitGetUserMedia ||
-                         navigator.mozGetUserMedia ||
-                         navigator.msGetUserMedia);
-    if (navigator.mediaDevices) {
-        console.log("Got mediaDevices, attempting to open with promise");
-        this.webcam = navigator.mediaDevices.getUserMedia(this.webcamConstraints).then(this.webcamCallback, function (err) {
-            console.log("Permissions Error", err);
+    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+        console.log("Can enumerate, getting list")
+        navigator.mediaDevices.enumerateDevices().then(function (devices) {
+            devices.forEach(function (device) {
+                if (device.kind == "videoinput") {
+                    my.webcams.push({ label: device.label, id: device.deviceId });
+                }
+            });
         });
-    } else if (navigator.getMedia) {
-        console.log("Attempting to open webcam...");
-        this.webcam = navigator.getMedia(this.webcamConstraints, this.webcamCallback, function (err) {
-            console.log("Legacy permissions error", err);
-        });
-    } else {
-        console.log("Unable to get webcam - no getUserMedia function");
+        if (navigator.mediaDevices.ondevicechange) {
+            navigator.mediaDevices.ondevicechange = function () {
+                my.webcams = [];
+                navigator.mediaDevices.enumerateDevices().then(function (devices) {
+                    devices.forEach(function (device) {
+                        if (device.kind == "videoinput") {
+                            my.webcams.push({ label: device.label, id: device.deviceId });
+                        }
+                    });
+                });
+            }
+        }
     }
+    this.connectWebcam = function () {
+        navigator.getMedia = (navigator.getUserMedia ||
+                             navigator.webkitGetUserMedia ||
+                             navigator.mozGetUserMedia ||
+                             navigator.msGetUserMedia);
+        var constraints = { video: { width: { min: 320, ideal: 1280 }, height: { min: 240, ideal: 720 } } };
+        //var constraints = { audio: false, video: {} };
+        if (this.webcamID) {
+            constraints.video['deviceId'] = { 'exact': this.webcamID };
+            //constraints = { video: { optional: [{ sourceId: this.webcamID }] } };
+            console.log("Set constraints to:" + JSON.stringify(constraints));
+        }
+        if (navigator.mediaDevices) {
+            console.log("Got mediaDevices, attempting to open with promise");
+            this.webcam = navigator.mediaDevices.getUserMedia(constraints).then(this.webcamCallback, function (err) {
+                console.log("Permissions Error: " + err);
+            });
+        } else if (navigator.getMedia) {
+            console.log("Attempting to open webcam...");
+            this.webcam = navigator.getMedia(constraints, this.webcamCallback, function (err) {
+                console.log("Legacy permissions error: " + err);
+            });
+        } else {
+            console.log("Unable to get webcam - no getUserMedia function");
+        }
+    }
+    this.connectWebcam();
+
 }

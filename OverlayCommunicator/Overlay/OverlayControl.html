@@ -1,0 +1,160 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>WebSocket Echo Client</title>
+	<meta charset="UTF-8" />
+</head>
+<body>
+	Status: <span id="status"></span><br />
+	Message: <span id="message"></span><br />
+	<input id="open" type="button" value="Connect" />&nbsp;
+	<input id="close" type="button" value="Disconnect" /><br />
+	<fieldset>
+		<legend>Webcam Controls</legend>
+		<button id="GetWebcams">List Webcams</button>
+		<select id="WebcamList"></select>
+		<button id="SetWebcam">Set Webcam</button><br />
+		<button id="ShowWebcam">Show Webcam</button>
+		<button id="HideWebcam">Hide Webcam</button>
+	</fieldset>
+	<fieldset>
+		<legend>Switch Screens</legend>
+		<button id="SwitchToAFK">Switch to AFK</button>
+		<button id="SwitchToGame">Switch to Game</button>
+		<button id="SwitchToBooth">Switch to Booth</button>
+	</fieldset>
+	<input type="text" name="GameComment" id="GameComment" placeholder="Comment" /><button id="UpdateComment">Update Comment</button><br />
+	<input type="text" name="AFKComment" id="AFKComment" placeholder="AFK Message" /><button id="UpdateAFK">Update AFK Message</button><br />
+	<input type="text" name="FollowerName" id="FollowerName" placeholder="Follower Name" /><button id="TestFollow">Test New Follower</button><br />
+	<input type="text" name="DonationName" id="DonationName" placeholder="Donator" /><input type="text" name="DonationCurrencySymbol" id="DonationCurrencySymbol" placeholder="$" /><input type="text" name="DonationAmount" id="DonationAmount" placeholder="0.00"/><button id="TestDonation">Test New Donation</button>
+	<script language="JavaScript" type="text/javascript">
+		"use strict";
+		// Initialize everything when the window finishes loading
+		var socket;
+		function connectSocket(url) {
+			socket = new WebSocket(url, "overlay");
+
+			socket.onopen = function (event) {
+			    document.getElementById("close").disabled = false;
+			    document.getElementById("open").disabled = true;
+				document.getElementById("status").innerHTML = "Connected";
+				var buttons = document.getElementsByTagName("button");
+				for (var i = 0; i < buttons.length; i++) {
+					buttons[i].disabled = false;
+				}
+				var webcamList = document.getElementById("WebcamList");
+				while (webcamList.firstChild) {
+					webcamList.removeChild(webcamList.firstChild);
+				}
+				socket.send(JSON.stringify({ name: "GetWebcams", data: "" }));
+			};
+
+			// Display messages received from the server
+			socket.onmessage = function (event) {
+			    document.getElementById("message").innerHTML = "Server Says: " + event.data;
+				var messageObj = {};
+				try {
+					messageObj = JSON.parse(event.data);
+				} catch (e) {
+					// Not JSON, we don't care;
+					return;
+				}
+				if (messageObj.name == "AuthKeyRequest") {
+					var url = "https://streamtip.com/api/oauth2/authorize?response_type=code&client_id=" + escape(messageObj.clientID) + "&redirect_uri=" + escape(messageObj.redirectURL);
+					window.location.href = url;
+				}
+				if (messageObj.name == "Webcam") {
+					var newOpt = document.createElement("option");
+					newOpt.value = messageObj.CamID;
+					newOpt.appendChild(document.createTextNode(messageObj.CamName));
+					document.getElementById("WebcamList").appendChild(newOpt);
+				}
+			};
+
+			// Display any errors that occur
+			socket.addEventListener("error", function (event) {
+			    document.getElementById("message").innerHTML = "Error: " + event.message;
+			});
+
+			socket.addEventListener("close", function (event) {
+				var buttons = document.getElementsByTagName("button");
+				for (var i = 0; i < buttons.length; i++) {
+					buttons[i].disabled = true;
+				}
+				document.getElementById("status").innerHTML = "Not Connected";
+			});
+		}
+		window.addEventListener("load", function (event) {
+			// Create a new connection when the Connect button is clicked
+			document.getElementById("open").addEventListener("click", function (event) {
+			    document.getElementById("open").disabled = true;
+				connectSocket("ws://" + location.host);
+			});
+
+			// Close the connection when the Disconnect button is clicked
+			document.getElementById("close").addEventListener("click", function (event) {
+			    document.getElementById("close").disabled = true;
+			    document.getElementById("message").innerHTML = "Disconnecting...";
+				socket.close();
+			});
+			var buttons = document.getElementsByTagName("button");
+			for (var i = 0; i < buttons.length; i++) {
+				buttons[i].disabled = true;
+			}
+			document.getElementById("status").innerHTML = "Connecting...";
+			document.getElementById("close").disabled = true;
+			connectSocket("ws://" + location.host);
+
+			// Send events.
+			var buttonEvents = {
+				"GetWebcams": function (event) {
+					var webcamList = document.getElementById("WebcamList");
+					while (webcamList.firstChild) {
+						webcamList.removeChild(webcamList.firstChild);
+					}
+					socket.send(JSON.stringify({ name: "GetWebcams", data: "" }));
+				},
+				"SetWebcam": function (event) {
+					socket.send(JSON.stringify({ name: "SetWebcam", data: document.getElementById("WebcamList").value }));
+				},
+				"ShowWebcam": function (event) {
+					socket.send(JSON.stringify({ name: "ShowWebcam", data: "" }));
+				},
+				"HideWebcam": function (event) {
+					socket.send(JSON.stringify({ name: "HideWebcam", data: "" }));
+				},
+				"SwitchToAFK": function (event) {
+					socket.send(JSON.stringify({ name: "SwitchToAFK", data: "" }));
+				},
+				"SwitchToGame": function (event) {
+					socket.send(JSON.stringify({ name: "SwitchToGame", data: "" }));
+				},
+				"SwitchToBooth": function (event) {
+					socket.send(JSON.stringify({ name: "SwitchToBooth", data: "" }));
+				},
+				"TestFollow": function (event) {
+					socket.send(JSON.stringify({ name: "TestFollow", data: { username: document.getElementById("FollowerName").value } }));
+				},
+				"TestDonation": function (event) {
+					var Name = document.getElementById("DonationName").value;
+					var Symbol = document.getElementById("DonationCurrencySymbol").value;
+					if (Symbol == "") Symbol = "$";
+					var Amount = document.getElementById("DonationAmount").value;
+					Amount = Number(Amount).toFixed(2);
+					socket.send(JSON.stringify({ name: "TestDonation", data: { username: Name, currencySymbol: Symbol, amount: Amount } }));
+				},
+				"UpdateComment": function (event) {
+					socket.send(JSON.stringify({ name: "UpdateComment", data: document.getElementById("GameComment").value }));
+				},
+				"UpdateAFK": function (event) {
+					socket.send(JSON.stringify({ name: "UpdateAFK", data: document.getElementById("AFKComment").value }));
+				}
+			}
+			Object.keys(buttonEvents).forEach(function (button) {
+				document.getElementById(button).addEventListener("click", buttonEvents[button]);
+			});
+		});
+
+</script>
+</body>
+</html>
