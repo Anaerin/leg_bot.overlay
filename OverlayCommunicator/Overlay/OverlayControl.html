@@ -3,30 +3,67 @@
 <head>
 	<title>WebSocket Echo Client</title>
 	<meta charset="UTF-8" />
+	<style type="text/css">
+		html, body {
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+
+		.leftside {
+			width: 50%;
+			margin: 0px;
+			padding: 0px;
+			position: absolute;
+			top: 0px;
+			left: 0px;
+		}
+
+		.rightside {
+			width: 50%;
+			margin: 0px;
+			padding: 0px;
+			position: absolute;
+			right: 2px;
+			top: 0px;
+			bottom: 0px;
+			max-height: 100%;
+		}
+
+			.rightside iframe {
+				width: 100%;
+				height: 100%;
+			}
+	</style>
 </head>
 <body>
-	Status: <span id="status"></span><br />
-	Message: <span id="message"></span><br />
-	<input id="open" type="button" value="Connect" />&nbsp;
-	<input id="close" type="button" value="Disconnect" /><br />
-	<fieldset>
-		<legend>Webcam Controls</legend>
-		<button id="GetWebcams">List Webcams</button>
-		<select id="WebcamList"></select>
-		<button id="SetWebcam">Set Webcam</button><br />
-		<button id="ShowWebcam">Show Webcam</button>
-		<button id="HideWebcam">Hide Webcam</button>
-	</fieldset>
-	<fieldset>
-		<legend>Switch Screens</legend>
-		<button id="SwitchToAFK">Switch to AFK</button>
-		<button id="SwitchToGame">Switch to Game</button>
-		<button id="SwitchToBooth">Switch to Booth</button>
-	</fieldset>
-	<input type="text" name="GameComment" id="GameComment" placeholder="Comment" /><button id="UpdateComment">Update Comment</button><br />
-	<input type="text" name="AFKComment" id="AFKComment" placeholder="AFK Message" /><button id="UpdateAFK">Update AFK Message</button><br />
-	<input type="text" name="FollowerName" id="FollowerName" placeholder="Follower Name" /><button id="TestFollow">Test New Follower</button><br />
-	<input type="text" name="DonationName" id="DonationName" placeholder="Donator" /><input type="text" name="DonationCurrencySymbol" id="DonationCurrencySymbol" placeholder="$" /><input type="text" name="DonationAmount" id="DonationAmount" placeholder="0.00"/><button id="TestDonation">Test New Donation</button>
+	<div class="leftside">
+		Status: <span id="status"></span><br />
+		Message: <span id="message"></span><br />
+		<input id="open" type="button" value="Connect" />&nbsp;
+		<input id="close" type="button" value="Disconnect" /><br />
+		<fieldset>
+			<legend>Webcam Controls</legend>
+			<button id="GetWebcams">List Webcams</button>
+			<select id="WebcamList"></select>
+			<button id="SetWebcam">Set Webcam</button><br />
+			<button id="ShowWebcam">Show Webcam</button>
+			<button id="HideWebcam">Hide Webcam</button>
+		</fieldset>
+		<fieldset>
+			<legend>Switch Screens</legend>
+			<button id="SwitchToAFK">Switch to AFK</button>
+			<button id="SwitchToGame">Switch to Game</button>
+			<button id="SwitchToBooth">Switch to Booth</button>
+		</fieldset>
+		<input type="text" name="GameComment" id="GameComment" placeholder="Comment" /><button id="UpdateComment">Update Comment</button><br />
+		<input type="text" name="AFKComment" id="AFKComment" placeholder="AFK Message" /><button id="UpdateAFK">Update AFK Message</button><br />
+		<input type="text" name="FollowerName" id="FollowerName" placeholder="Follower Name" /><button id="TestFollow">Test New Follower</button><br />
+		<input type="text" name="DonationName" id="DonationName" placeholder="Donator" /><input type="text" name="DonationCurrencySymbol" id="DonationCurrencySymbol" placeholder="$" /><input type="text" name="DonationAmount" id="DonationAmount" placeholder="0.00" /><button id="TestDonation">Test New Donation</button>
+	</div>
+	<div class="rightside">
+		<iframe src="http://www.twitch.tv/anaerin/chat"></iframe>
+	</div>
 	<script language="JavaScript" type="text/javascript">
 		"use strict";
 		// Initialize everything when the window finishes loading
