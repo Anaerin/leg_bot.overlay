@@ -1,14 +1,17 @@
 function AlertHandler() {
     this.queue = [];
     this.playing = false;
-    this.alertObject;
-    this.alertSounds = {};
+	this.alertObject;
+	this.cssClassObj;
+    this.alertTypes = {};
     this.showAlert = function () {
-        this.alertObject.classList.add("visible");
+		var obj = this.cssClassObj?this.cssClassObj:this.alertObject;
+		obj.classList.add("visible");
     }
     
     this.hideAlert = function (callback) {
-        this.alertObject.classList.remove("visible");
+		var obj = this.cssClassObj?this.cssClassObj:this.alertObject;
+		obj.classList.remove("visible");
     }
     this.checkQueue = function () {
         if (!this.queue.length || this.playing) return;
@@ -18,13 +21,15 @@ function AlertHandler() {
     this.displayAlert = function (message) {
         this.playing = true;
         this.alertObject.innerHTML = message.message;
-        this.alertObject.className = message.type;
-        if (this.alertSounds[message.type]) {
-            console.log("Got an alert sound - " + this.alertSounds[message.type].currentTime);
-            if (this.alertSounds[message.type].currentTime == 0) {
+		this.alertObject.className = message.type;
+		var alertType = this.alertTypes[message.type];
+        if (alertType && alertType.soundObj) {
+            console.log("Got an alert sound - " + alertType.soundObj.currentTime);
+            if (alertType.soundObj.currentTime == 0) {
                 console.log("Got event, found thing. Calling it.");
-                this.alertSounds[message.type].caller = this;
-                this.alertSounds[message.type].onended = function (e) {
+				alertType.soundObj.caller = this;
+				alertType.soundObj.fadeOut = alertType.fadeOut;
+				alertType.soundObj.onended = function (e) {
                     console.log("Sound ended. Resetting");
                     ref = this.caller;
                     console.log("Seeking to 0");
@@ -39,9 +44,9 @@ function AlertHandler() {
                     ref.timer = setTimeout(function (ref) {
                         ref.playing = false;
                         ref.checkQueue();
-                    }, 2100, ref);
+                    }, this.fadeOut, ref);
                 }
-                this.alertSounds[message.type].play();
+				alertType.soundObj.play();
                 this.showAlert();
             } else {
                 // We shouldn't get here. If we do, someone's being very proactive and trying to play while we're playing.
@@ -51,12 +56,12 @@ function AlertHandler() {
         } else {
             this.showAlert();
             this.timer = setTimeout(function (ref) {
-                ref.hideAlert();
-                ref.timer = setTimeout(function (ref) {
+                ref.caller.hideAlert();
+                ref.caller.timer = setTimeout(function (ref) {
                     ref.playing = false;
                     ref.checkQueue();
-                }, 2100, ref);
-            }, 10000, this);
+                }, ref.alertType.fadeOut, ref.caller);
+            }, alertType.duration, { caller: this, alertType: alertType });
         }
     }
     this.addToQueue = function (data) {
@@ -73,37 +78,49 @@ function StreamCounters(streamerName) {
     this.countDownItem;
     this.gameNameItem;
     this.prependDashToGame = false;
-    this.ws;
-    this.bindWebSocket = function () {
+	this.ws;
+	this.updateCounter = function (name, value) {
+		var counter = document.querySelectorAll("counter[data-name=" + name + "]")[0];
+		if (counter.innerHTML != value) {
+			counter.innerHTML = value;
+			counter.parentElement.classList.add("Updated");
+			if (counter.timeout) {
+				window.clearTimeout(counter.timeout);
+			}
+			counter.timeout = window.setTimeout(function () {
+				counter.parentElement.classList.remove("Updated");
+			}, 7000);
+		}
+	}
+	this.onMessage = function(message) {
+		var data = JSON.parse(message.data);
+		switch (data.action) {
+			case "StatChanged":
+				var statHolders = document.querySelectorAll("counter[data-name=" + data.stat + "]");
+				me.updateCounter(data.stat, data.value);
+				break;
+			case "GameChanged":
+				if (me.gameNameItem) {
+					if (data.game != "" && me.prependDashToGame) {
+						me.gameNameItem.innerHTML = " - " + data.game;
+					} else {
+						me.gameNameItem.innerHTML = data.game;
+					}
+				}
+				break;
+			default:
+				console.log("Erm... I don't know what to do with this", data);
+				break;
+		}
+	}
+	this.bindWebSocket = function () {
         var me = this;
         this.ws = new WebSocket("ws://ghostoflegbot.website/ws/" + streamerName);
         //this.ws = new WebSocket("ws://localhost:3000/ws/" + streamerName);
         this.ws.addEventListener('close', function (err) {
             me.bindWebSocket();
         });
-        this.ws.addEventListener('message', function (message) {
-            var data = JSON.parse(message.data);
-            switch (data.action) {
-                case "StatChanged":
-                    var statHolders = document.querySelectorAll("counter[data-name=" + data.stat + "]");
-                    for (var i = 0; i < statHolders.length; i++) {
-                        statHolders[i].innerHTML = data.value;
-                    }
-                    break;
-                case "GameChanged":
-                    if (me.gameNameItem) {
-                        if (data.game != "" && me.prependDashToGame) {
-                            me.gameNameItem.innerHTML = " - " + data.game;
-                        } else {
-                            me.gameNameItem.innerHTML = data.game;
-                        }
-                    }
-                    break;
-                default:
-                    console.log("Erm... I don't know what to do with this", data);
-                    break;
-            }
-        });
+        this.ws.addEventListener('message', this.onMessage);
     }
     this.bindWebSocket();
     this.onStateChange = function () {
@@ -198,9 +215,9 @@ function StreamCounters(streamerName) {
             for (i = 0; i < counters.length; i++) {
                 var counter = counters[i];
                 if (result.counts.hasOwnProperty(counter.getAttribute("data-name"))) {
-                    counter.innerHTML = result.counts[counter.getAttribute("data-name")];
+					this.updateCounter(counter.getAttribute("data-name"), result.counts[counter.getAttribute("data-name")]);
                 } else {
-                    counter.innerHTML = "?";
+					this.updateCounter(counter.getAttribute("data-name"), "?");
                 }
             }
         }
@@ -214,7 +231,8 @@ function FollowerOverlay(streamer) {
     this.alertHandler;
     this.logging = true;
     this.followers = {};
-    this.followerListObj;
+	this.followerListObj;
+	this.followerCountObj;
     this.doUpdate = function (caller) {
         caller.getFollowers(false, 0, caller);
     }
@@ -245,11 +263,22 @@ function FollowerOverlay(streamer) {
                     result.follows.forEach(function (follower) {
                         if (!xHR.fetchAll) {
                             if (!ref.followers.hasOwnProperty(follower.user.name)) {
-                                ref.alertHandler.addToQueue({ message: follower.user.name + " just followed!", type: "follow" });
+								if (ref.followerCountObj) {
+									if (ref.followerCountObj.updateTimer) {
+										window.clearTimeout(ref.followerCountObj.updateTimer);
+									}
+									ref.followerCountObj.updateTimer = window.setTimeout(function () {
+										this.parentElement.classList.remove("Updated");
+									}, 5000);
+									ref.followerCountObj.parentElement.classList.add("Updated");
+									
+								}
+								ref.alertHandler.addToQueue({ message: follower.user.name + "", type: "follow" });
                             }
                         }
-                        ref.followers[follower.user.name] = true;
-                    });
+						ref.followers[follower.user.name] = true;
+					});
+					ref.followerCountObj.innerHTML = Object.keys(ref.followers).length;
                     if (xHR.fetchAll) {
                         ref.getFollowers(true, xHR.fetchOffset + 100, ref);
                     }
@@ -339,59 +368,68 @@ function DonationUpdater() {
     this.progressLabel;
     this.alertHandler;
     this.socketCommunication;
+    this.connected = false;
     var my = this;
     this.connect = function () {
-        this.donations = [];
-        console.log("Opening Connection...");
-        this.socketCommunication.bindCommand("AuthToken", function (value) {
-            console.log("Got API Key", value.APIKey);
-            my.APIKey = value.APIKey;
-            my.connect();
-        });
-        this.socketCommunication.bindCommand("GoalData", function (value) {
-            console.log("Got goal data");
-            my.updateGoal(my, value.goal);
-        });
-        if (this.APIKey) {
-            console.log("We have an API Key, opening websocket...");
-            this.streamTipSocket = new WebSocket('wss://streamtip.com/ws?access_token=' + this.APIKey);
-            this.streamTipSocket.caller = this;
-            this.streamTipSocket.onopen = function (message) {
-                console.log("Streamtip Websocket open.");
-            }
-            this.streamTipSocket.onmessage = function (message) {
-                var ref = this.caller;
-                console.log("Got Streamtip websocket message: " + message.data);
-                var event = JSON.parse(message.data);
-                if (event.name == "newTip") {
-                    ref.donations.push(event.data);
-                    console.log("Pushing alert");
-                    ref.alertHandler.addToQueue({ message: event.data.username + " just donated " + event.data.currencySymbol + event.data.amount + "!", type: "donation" });
-                    ref.updateDonationList();
-                    if (event.data.goal) {
-                        console.log("Goal included, updating");
-                        ref.updateGoal(ref, event.data.goal);
-                    } else {
-                        ref.noGoal();
+        if (!this.connected) {
+            this.donations = [];
+            console.log("Opening Connection...");
+            this.socketCommunication.bindCommand("AuthToken", function (value) {
+                console.log("Got API Key", value.APIKey);
+                my.APIKey = value.APIKey;
+                my.connect();
+            });
+            this.socketCommunication.bindCommand("GoalData", function (value) {
+                console.log("Got goal data");
+                my.updateGoal(my, value.goal);
+            });
+            if (this.APIKey) {
+                console.log("We have an API Key, opening websocket...");
+                this.streamTipSocket = new WebSocket('wss://streamtip.com/ws?access_token=' + this.APIKey);
+                this.streamTipSocket.caller = this;
+                this.streamTipSocket.onopen = function (message) {
+                    my.connected = true;
+                    console.log("Streamtip Websocket open.");
+                }
+                this.streamTipSocket.onmessage = function (message) {
+                    var ref = this.caller;
+                    console.log("Got Streamtip websocket message: " + message.data);
+                    var event = JSON.parse(message.data);
+                    if (event.name == "newTip") {
+                        ref.donations.push(event.data);
+                        console.log("Pushing alert");
+                        ref.alertHandler.addToQueue({ message: event.data.username + " just donated " + event.data.currencySymbol + event.data.amount + "!", type: "donation" });
+                        ref.updateDonationList();
+                        if (event.data.goal) {
+                            console.log("Goal included, updating");
+                            ref.updateGoal(ref, event.data.goal);
+                        } else {
+                            ref.noGoal();
+                        }
                     }
                 }
-            }
-            this.streamTipSocket.onclose = function (err) {
-                if (err.code === 4010) {
-                    console.log("Streamtip Auth failed");
-                    my.askForAuth();
-                } else if (err.code === 4290) {
-                    console.log("Streamtip rate limited - reconnecting in 10 seconds...");
-                    setTimeout(my.connect, 100000);
-                } else if (err.code === 4000) {
-                    console.log("Streamtip bad request");
-                } else {
-                    my.connect();
+                this.streamTipSocket.onerror = function (err) {
+                    console.log("Streamtip Socket Error " + JSON.stringify(err));
                 }
+                this.streamTipSocket.onclose = function (err) {
+                    my.connected = false;
+                    if (err.code === 4010) {
+                        console.log("Streamtip Auth failed");
+                        my.askForAuth();
+                    } else if (err.code === 4290) {
+                        console.log("Streamtip rate limited - reconnecting in 10 seconds...");
+                        setTimeout(my.connect, 100000);
+                    } else if (err.code === 4000) {
+                        console.log("Streamtip bad request");
+                    } else {
+                        console.log("Connection closed, error code " + err.code + ", " + err.reason);
+                        my.connect();
+                    }
+                }
+            } else {
+                console.log("No APIKey found, asking for one.");
+                this.askForAuth();
             }
-        } else {
-            console.log("No APIKey found, asking for one.");
-            this.askForAuth();
         }
     }
     this.updateGoal = function (ref, goal) {
@@ -468,7 +506,7 @@ function DisplayWebcam(webcamObject) {
                              navigator.webkitGetUserMedia ||
                              navigator.mozGetUserMedia ||
                              navigator.msGetUserMedia);
-        var constraints = { video: { width: { min: 320, ideal: 1280 }, height: { min: 240, ideal: 720 } } };
+        var constraints = { video: { width: { min: 320, ideal: 1280, max: 1920 }, height: { min: 240, ideal: 720, max: 1080 } } };
         //var constraints = { audio: false, video: {} };
         if (this.webcamID) {
             constraints.video['deviceId'] = { 'exact': this.webcamID };

@@ -1,5 +1,9 @@
 ﻿var secrets = require('./secrets.js');
 
+var overlayConnections = [];
+var controlConnections = [];
+var receivedMessage = {};
+
 var WebSocketServer = require('websocket').server,
 	http = require('http'),
 	https = require('https'),
@@ -15,6 +19,8 @@ var contentTypesByExtension = {
 	'.css': "text/css",
 	'.js': "text/javascript"
 };
+
+
 
 var bShotOnGoal = false;
 
@@ -167,18 +173,47 @@ function PostAuthToken(AuthorizationCode, Refresh) {
 	request.on('error', function (err) { console.error(err); });
 }
 
-wsServer.on('request', function (request) {
-	if (!originIsAllowed(request.origin)) {
-		// Make sure we only accept requests from an allowed origin
-		request.reject();
-		console.log((new Date()) + ' Connection from origin ' + request.origin + ' rejected.');
-		return;
+function broadcastMessage(message) {
+    overlayConnections.forEach(function (connection) {
+        connection.send(message);
+    });
+}
+
+function receiveControlRequest(message) {
+	if (typeof message === "string") message = JSON.parse(message);
+    if (message.value && message.name) {
+        receivedMessage[message.name] = message.value;
+    } else {
+        delete receivedMessage[message.name];
+    }
+    broadcastMessage(message);
+}
+
+function receiveOverlayRequest(message) {
+    // By all rights, the overlay shouldn't be requesting anything...
+}
+
+function replayMessages(connection) {
+	for (name in receivedMessage) {
+		connection.send({ name: name, value: receivedMessage[name] });
 	}
-	
-	var connection = request.accept('overlay', request.origin);
-	var clientIndex = clients.push(connection) - 1;
-	console.log((new Date()) + ' Connection accepted.');
-	connection.on('message', function (message) {
+}
+
+wsServer.on('request', function (request) {
+    if (request.origin == "overlay") {
+        var connection = request.accept('overlay', request.origin);
+        connection.on('message', receiveOverlayRequest);
+        overlayConnections.push(connection);
+		replayMessages(connection);
+    } else if (request.origin == "control") {
+        var connection = request.accept('control', request.origin);
+        connection.on('message', receiveControlRequest);
+        controlConnections.push(connection);
+    } else {
+        request.reject("Unknown socket type");
+    }
+    console.log((new Date()) + ' ' + request.origin + ' Connection accepted.');
+    connection.on('message', function (message) {
 		if (message.type === 'utf8') {
 			console.log('Received Message: ' + message.utf8Data);
 			try {
@@ -212,7 +247,7 @@ wsServer.on('request', function (request) {
 					send(message.utf8Data);
 				}
 			} else {
-				sned(message.utf8Data);
+				send(message.utf8Data);
 			}
 		}
 	});

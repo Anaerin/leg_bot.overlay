@@ -59,7 +59,8 @@
 		<input type="text" name="GameComment" id="GameComment" placeholder="Comment" /><button id="UpdateComment">Update Comment</button><br />
 		<input type="text" name="AFKComment" id="AFKComment" placeholder="AFK Message" /><button id="UpdateAFK">Update AFK Message</button><br />
 		<input type="text" name="FollowerName" id="FollowerName" placeholder="Follower Name" /><button id="TestFollow">Test New Follower</button><br />
-		<input type="text" name="DonationName" id="DonationName" placeholder="Donator" /><input type="text" name="DonationCurrencySymbol" id="DonationCurrencySymbol" placeholder="$" /><input type="text" name="DonationAmount" id="DonationAmount" placeholder="0.00" /><button id="TestDonation">Test New Donation</button>
+		<input type="text" name="DonationName" id="DonationName" placeholder="Donator" /><input type="text" name="DonationCurrencySymbol" id="DonationCurrencySymbol" placeholder="$" /><input type="text" name="DonationAmount" id="DonationAmount" placeholder="0.00" /><button id="TestDonation">Test New Donation</button><br />
+		<input type="text" name="CounterName" id="CounterName" placeholder="Counter Name"/><input type="text" name="CounterValue" id="CounterValue" placeholder="5" /><button id="TestCounter">Test Counter Update</button>
 	</div>
 	<div class="rightside">
 		<iframe src="http://www.twitch.tv/anaerin/chat"></iframe>
@@ -185,6 +186,9 @@
 				},
 				"UpdateAFK": function (event) {
 					socket.send(JSON.stringify({ name: "UpdateAFK", data: document.getElementById("AFKComment").value }));
+				},
+				"TestCounter": function (event) {
+					socket.send(JSON.stringify({ name: "TestStat", data: { action: "StatChanged", stat: document.getElementById("CounterName").value, value: document.getElementById("CounterValue").value } }));
 				}
 			}
 			Object.keys(buttonEvents).forEach(function (button) {

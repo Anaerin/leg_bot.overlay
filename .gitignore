@@ -210,3 +210,9 @@ FakesAssemblies/
 GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
+/OverlayCommunicator/typings
+/OverlayCommunicator/OverlayCommunicator.exe
+/OverlayCommunicator/OverlayCommunicator.jx
+/OverlayCommunicator/OverlayCommunicator.jxp
+/OverlayCommunicator/secrets.js
+/OverlayCommunicator/typings.json
