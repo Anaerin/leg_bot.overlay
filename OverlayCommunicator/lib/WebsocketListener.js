@@ -20,7 +20,7 @@ class WebsocketListener extends EventEmitter {
 				var connection = request.accept(this.Type, request.origin);
 				connection.parent = this;
 				// Hook the message event, so we get something when we get a message.
-				connection.on("message", (message) => {
+				connection.on("message", function (message) {
 
 					// Is this message text?
 					if (message.type === 'utf8') {
@@ -32,21 +32,26 @@ class WebsocketListener extends EventEmitter {
 						} catch (e) {
 
 							// For some reason we couldn't parse the incoming JSON. This is a problem.
-							console.log("WSController(%s): Message not valid JSON: %s", this.Type, message.utf8Data);
+							console.log("WSController(%s): Message not valid JSON: %s", this.parent.Type, message.utf8Data);
 							return;
 						} finally {
+							// Replay received message to other connected sockets
+							this.parent.Connections.forEach(function (connection) {
+								if (connection !== this) {
+									connection.send(message.utf8Data);
+								}, this);
 
 							// Emit event for the type (if it has one)
 							if (data.type) {
-								this.emit("ReceivedJSON:" + data.type.toString().toLowerCase(), data);
+								this.parent.emit("ReceivedJSON:" + data.type.toString().toLowerCase(), data);
 							}
 
 							// Emit event that we've received data, in case someone wants to hook everything.
-							this.emit("ReceivedJSON", data);
+							this.parent.emit("ReceivedJSON", data);
 						}
 					} else {
 						// We shouldn't get here, as we're using JSON for everything. So error.
-						console.log("WSController(%s): Received websocket message with binary type!", this.Type);
+						console.log("WSController(%s): Received websocket message with binary type!", this.parent.Type);
 					}
 				});
 

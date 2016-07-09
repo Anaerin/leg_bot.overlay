@@ -4,6 +4,9 @@ var overlayConnections = [];
 var controlConnections = [];
 var receivedMessage = {};
 
+var ControlConnection = require("lib/ControlConnection.js");
+var OverlayConnection = require("lib/WebsocketListener.js");
+
 var WebSocketServer = require('websocket').server,
 	http = require('http'),
 	https = require('https'),
@@ -75,7 +78,10 @@ wsServer = new WebSocketServer({
 	autoAcceptConnections: false
 });
 
-open("http://localhost:8000/OverlayControl.html");
+var ControlConn = new ControlConnection(wsServer);
+var OverlayConn = new OverlayConnection(wsServer, );
+
+// open("http://localhost:8000/OverlayControl.html");
 
 function originIsAllowed(origin) {
 	// put logic here to detect whether the specified origin is allowed.

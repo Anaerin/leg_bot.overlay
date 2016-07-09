@@ -32,7 +32,7 @@
   <ItemGroup>
     <Compile Include="app.js" />
     <Compile Include="lib\ChatConn.js" />
-    <Compile Include="lib\ControlListener.js" />
+    <Compile Include="lib\ControlConnection.js" />
     <Compile Include="lib\LegBotConn.js" />
     <Compile Include="lib\StreamTipConn.js" />
     <Compile Include="lib\WebsocketListener.js" />
