@@ -2,7 +2,7 @@
 const Connector = require("./WebsocketListener.js");
 const BufferLength = 100;
 
-class ControlConnection extends EventEmitter {
+module.exports = class ControlConnection extends EventEmitter {
 	constructor(Server) {
 		// Make yourself a Connection object and get it set up.
 		this.connection = new Connector(Server, "Overlay");
@@ -24,12 +24,7 @@ class ControlConnection extends EventEmitter {
 		for (var i = 0; i < this.replayBuffer.length; i++) {
 
 			// Build a list of indexes to remove.
-			if (this.replayBuffer[i].type && this.replayBuffer[i].type == type) {
-
-				// Place each new entry at the beginning of the list (Essentially building the list backwards).
-				// This could be a performance issue, but fortunately this list should never get particularly long.
-				removals.unshift(i);
-			}
+			if (this.replayBuffer[i].type && this.replayBuffer[i].type == type) removals.unshift(i);
 		}
 
 		// Then remove them (Last entry first), to ensure numbers don't change as we're removing them.
@@ -53,6 +48,14 @@ class ControlConnection extends EventEmitter {
 		this.removeByType(data.type);
 		// Then send the data, as normal.
 		this.send(data);
-	}
-	
+    }
+    removeByCallback(callback) {
+        var removals = [];
+        for (var i = 0; i < this.replayBuffer.length; i++) {
+            if (callback(this.replayBuffer[i])) removals.unshift(i);
+        }
+        removals.forEach((deadIndex) => {
+            this.replayBuffer.splice(deadIndex, 1);
+        });
+    }
 }

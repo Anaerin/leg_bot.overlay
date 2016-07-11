@@ -1,7 +1,7 @@
 ﻿const EventEmitter = require("events").EventEmitter;
 
 // Make us a controller for all the websockets we're going to be getting.
-class WebsocketListener extends EventEmitter {
+module.exports = class WebsocketListener extends EventEmitter {
 	constructor(Server, ConnectionType) {
 
 		// Set up some basic containers.

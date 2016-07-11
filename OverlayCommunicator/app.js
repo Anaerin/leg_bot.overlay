@@ -6,6 +6,7 @@ var receivedMessage = {};
 
 var ControlConnection = require("lib/ControlConnection.js");
 var OverlayConnection = require("lib/WebsocketListener.js");
+var LegBotConnector = require("lib/LegBotConn.js");
 
 var WebSocketServer = require('websocket').server,
 	http = require('http'),
@@ -22,8 +23,6 @@ var contentTypesByExtension = {
 	'.css': "text/css",
 	'.js': "text/javascript"
 };
-
-
 
 var bShotOnGoal = false;
 

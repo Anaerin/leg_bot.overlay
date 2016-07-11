@@ -34,7 +34,9 @@
     <Compile Include="lib\ChatConn.js" />
     <Compile Include="lib\ControlConnection.js" />
     <Compile Include="lib\LegBotConn.js" />
-    <Compile Include="lib\StreamTipConn.js" />
+    <Compile Include="lib\oAuthHandler.js" />
+    <Compile Include="lib\StreamTipConnector.js" />
+    <Compile Include="lib\TwitchConnector.js" />
     <Compile Include="lib\WebsocketListener.js" />
     <Compile Include="Overlay\js\adapter.js" />
     <Compile Include="Overlay\js\StreamerCounts.js" />

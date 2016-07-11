@@ -1,6 +1,9 @@
-﻿var tmi = require("tmi.js");
+﻿const EventEmitter = require("events").EventEmitter;
+const tmi = require("tmi.js");
 
-module.exports = function ConnectToChat(channel) {
-	this.client = new tmi();
-	
+
+module.exports = class ChatConnector extends EventEmitter {
+    constructor(streamer) {
+
+    }
 }
