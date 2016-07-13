@@ -1,12 +1,15 @@
-﻿var secrets = require('./secrets.js');
+﻿"use strict";
+var secrets = require('./secrets.js');
 
 var overlayConnections = [];
 var controlConnections = [];
 var receivedMessage = {};
 
-var ControlConnection = require("lib/ControlConnection.js");
-var OverlayConnection = require("lib/WebsocketListener.js");
-var LegBotConnector = require("lib/LegBotConn.js");
+var ControlConnection = require("./lib/ControlConnection.js");
+var OverlayConnection = require("./lib/WebsocketListener.js");
+var LegBotConnector = require("./lib/LegBotConn.js");
+var TwitchConnector = require("./lib/TwitchConnector.js");
+var StreamTipConnector = require("./lib/StreamTipConnector.js");
 
 var WebSocketServer = require('websocket').server,
 	http = require('http'),
@@ -26,8 +29,6 @@ var contentTypesByExtension = {
 
 var bShotOnGoal = false;
 
-var streamTipAPIKeys = {};
-
 var server = http.createServer(function (request, response) {
 	console.log((new Date()) + ' Received request for ' + request.url);
     var uri = url.parse(request.url, true);
@@ -40,9 +41,17 @@ var server = http.createServer(function (request, response) {
 			return;
 		}
         if (uri.query && uri.query["code"]) {
-            PostAuthToken(uri.query["code"], false);
-            goalAttempts = 0;
-            FetchGoalList();
+            switch (uri.query["state"]) {
+                case "Twitch":
+                    TwitchConn.receivedCode(uri.query["code"]);
+                    break;
+                case "StreamTip":
+                    StreamTipConn.receivedCode(uri.query["code"]);
+                    break;
+                default:
+                    console.log("Got code for unknown service (%s)", uri.query["state"]);
+            }
+            ControlConn.getNextAuthRequest();
         }
 		if (fs.statSync(filename).isDirectory()) filename += '/index.html';
 		
@@ -63,222 +72,43 @@ var server = http.createServer(function (request, response) {
 	});
 });
 
+function SendAuthCodes(code) {
+    TwitchConn.receivedCode(code);
+    StreamTipConn.receivedCode(code);
+}
+
 server.listen(8000, function () {
 	console.log((new Date()) + ' Server is listening on port 8000');
 });
 
-wsServer = new WebSocketServer({
+var wsServer = new WebSocketServer({
 	httpServer: server,
-	// You should not use autoAcceptConnections for production
-	// applications, as it defeats all standard cross-origin protection
-	// facilities built into the protocol and the browser.  You should
-	// *always* verify the connection's origin and decide whether or not
-	// to accept it.
 	autoAcceptConnections: false
 });
 
 var ControlConn = new ControlConnection(wsServer);
-var OverlayConn = new OverlayConnection(wsServer, );
 
-// open("http://localhost:8000/OverlayControl.html");
-
-function originIsAllowed(origin) {
-	// put logic here to detect whether the specified origin is allowed.
-	return true;
-}
-
-function FetchGoalList() {
-    if (streamTipAPIKeys.AccessToken) {
-        var returnData = "";
-        var requestOptions = {
-            method: "get",
-            hostname: 'streamtip.com',
-            port: 443,
-            path: '/api/goals/active',
-            headers: {
-                'Authorization': 'Bearer ' + streamTipAPIKeys.AccessToken
-            }
-        }
-        var responseFunction = function (res) {
-            res.setEncoding('utf8');
-            console.log("Goal list returned", res.statusCode);
-            res.on('data', function (chunk) {
-                try {
-                    var result = JSON.parse(returnData + chunk);
-                } catch (e) {
-                    returnData += chunk;
-                }
-                if (result) {
-                    send({ name: "GoalData", data: result });
-                }
-            });
-        }
-        var request = https.request(requestOptions, responseFunction);
-        request.on('error', function (err) { console.error("Goal Error:", err); });
-        request.end();
-    } else {
-        console.log("Tried to get Goal List without access token - Setting flag");
-        bShotOnGoal = true;
-    }
-}
-
-function PostAuthToken(AuthorizationCode, Refresh) {
-	var requestData = {
-		"client_id": secrets.streamtipClientID, 
-		"client_secret": secrets.streamtipClientSecret, 
-		"redirect_url": secrets.streamtipRedirectURL, 
-	};
-	if (Refresh) {
-		requestData['grant_type'] = 'refresh_token';
-		requestData['refresh_token'] = AuthorizationCode;
-	} else {
-		requestData['grant_type'] = 'authorization_code';
-		requestData['code'] = AuthorizationCode;
-	}
-	requestData = querystring.stringify(requestData);
-	var returnData = "";
-	var requestOptions = {
-		method: 'post', 
-		hostname: 'streamtip.com', 
-		port: 443, 
-		path: '/api/oauth2/token', 
-		headers: {
-			'Content-Type': 'application/x-www-form-urlencoded', 
-			'Content-Length': Buffer.byteLength(requestData)
-		}
-	}
-	var responseFunction = function (res) {
-		res.setEncoding('utf8');
-		res.on('data', function (chunk) {
-			try {
-				var result = JSON.parse(returnData + chunk);
-			} catch (e) {
-				// Data isn't complete, or didn't parse for some reason
-				returnData += chunk
-			}
-			if (result) {
-				console.log('Got Auth Token.', result.access_token, "sending...");
-				var now = new Date(Date.now());
-				streamTipAPIKeys.AccessToken = result.access_token;
-				streamTipAPIKeys.RefreshToken = result.refresh_token;
-				streamTipAPIKeys.AccessTokenExpires = now.getTime() + (result.expires_in * 1000);
-				streamTipAPIKeys.RefreshTokenExpires = now.getTime() + 2592000000;
-                send({ name: "AuthToken", data: { APIKey: streamTipAPIKeys.AccessToken } });
-                if (bShotOnGoal) {
-                    bShotOnGoal = false;
-                    FetchGoalList();
-                }
-				//Here's hoping we don't get multi-chunk data. The try/catch should sort it out, hopefully...
-			};
-		});
-	}
-	var request = https.request(requestOptions, responseFunction);
-	request.write(requestData);
-	request.end();
-	request.on('error', function (err) { console.error(err); });
-}
-
-function broadcastMessage(message) {
-    overlayConnections.forEach(function (connection) {
-        connection.send(message);
-    });
-}
-
-function receiveControlRequest(message) {
-	if (typeof message === "string") message = JSON.parse(message);
-    if (message.value && message.name) {
-        receivedMessage[message.name] = message.value;
-    } else {
-        delete receivedMessage[message.name];
-    }
-    broadcastMessage(message);
-}
-
-function receiveOverlayRequest(message) {
-    // By all rights, the overlay shouldn't be requesting anything...
-}
-
-function replayMessages(connection) {
-	for (name in receivedMessage) {
-		connection.send({ name: name, value: receivedMessage[name] });
-	}
-}
-
-wsServer.on('request', function (request) {
-    if (request.origin == "overlay") {
-        var connection = request.accept('overlay', request.origin);
-        connection.on('message', receiveOverlayRequest);
-        overlayConnections.push(connection);
-		replayMessages(connection);
-    } else if (request.origin == "control") {
-        var connection = request.accept('control', request.origin);
-        connection.on('message', receiveControlRequest);
-        controlConnections.push(connection);
-    } else {
-        request.reject("Unknown socket type");
-    }
-    console.log((new Date()) + ' ' + request.origin + ' Connection accepted.');
-    connection.on('message', function (message) {
-		if (message.type === 'utf8') {
-			console.log('Received Message: ' + message.utf8Data);
-			try {
-				var data = JSON.parse(message.utf8Data);
-			} catch (e) {
-				//do nothing
-			}
-			if (data) {
-                if (data.name == "Auth") {
-                    //We've been asked for an auth key. Let's see what we can do about that...
-                    if (!streamTipAPIKeys.AccessToken && !streamTipAPIKeys.RefreshToken) {
-                        //No API keys, start from scratch.
-                        send({ name: "AuthKeyRequest", clientID: secrets.streamtipClientID, redirectURL: secrets.streamtipRedirectURL });
-                    } else if (streamTipAPIKeys.RefreshTokenExpires < Date.now()) {
-                        //The refresh token has expired (It's been 30 days since last time? Yikes!), start from scratch.
-                        send({ name: "AuthKeyRequest", clientID: secrets.streamtipClientID, redirectURL: secrets.streamtipRedirectURL });
-                    } else if (streamTipAPIKeys.AccessTokenExpires < Date.now()) {
-                        //Access key has expired. Use the refresh key to get a new one.
-                        PostAuthToken(streamTipAPIKeys.RefreshToken, true);
-                    } else if (streamTipAPIKeys.RefreshTokenExpires > Date.now() && streamTipAPIKeys.AccessTokenExpires > Date.now()) {
-                        //We have a valid and in-date access key. Give it back.
-                        send({ name: "AuthToken", data: { APIKey: streamTipAPIKeys.AccessToken } });
-                        goalAttempts = 0;
-                        FetchGoalList();
-                    } else {
-                        //We should never get here.
-                        console.warn("Something happened with the access token system... No idea what.");
-                        console.warn("Here's what we know: streamTipAPIKeys is ", streamTipAPIKeys);
-                    }
-                } else {
-					send(message.utf8Data);
-				}
-			} else {
-				send(message.utf8Data);
-			}
-		}
-	});
-	connection.on('close', function (reasonCode, description) {
-		console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
-		var index = 0;
-		for (var i = 0; i < clients.length; i++) {
-			if (clients[i] === connection) {
-				index = i;
-				break;
-			}
-		}
-		clients.splice(index, 1);
-	});
+ControlConn.on("ReceivedJSON", message => {
+    OverlayConn.send({ type: "ControlMessage", value: message });
 });
 
-function send(message) {
-	if (typeof message === 'string') {
-		clients.forEach(function (client) {
-			//Send it back to everyone.
-			client.sendUTF(message);
-		});
-	} else {
-		clients.forEach(function (client) {
-			//Send it back to everyone.
-			client.sendUTF(JSON.stringify(message));
-		});
-	}
-}
+var OverlayConn = new OverlayConnection(wsServer, "Overlay");
+
+var TwitchConn = new TwitchConnector("anaerin");
+TwitchConn.on("NeedAuth", authURL => {
+    ControlConn.sendAuthRequest({ type: "NeedAuth", value: authURL });
+});
+TwitchConn.on("ChatMessage", message => {
+    OverlayConn.send({ type: "ChatMessage", value: message });
+    ControlConn.send({ type: "ChatMessage", value: message });
+});
+TwitchConn.connect();
+
+var StreamTipConn = new StreamTipConnector();
+StreamTipConn.on("NeedAuth", authURL => {
+    ControlConn.sendAuthRequest({ type: "NeedAuth", value: authURL });
+});
+StreamTipConn.connect();
+
+var LegBotConn = new LegBotConnector("anaerin");
+// open("http://localhost:8000/OverlayControl.html");

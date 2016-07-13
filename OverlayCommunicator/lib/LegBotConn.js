@@ -1,10 +1,12 @@
-﻿const EventEmitter = require("events").EventEmitter,
+﻿"use strict";
+const EventEmitter = require("events").EventEmitter,
 	WebSocket = require("websocket").client,
 	HTTP = require("http");
 
 module.exports = class LegBotConnector extends EventEmitter {
 	constructor(streamer) {
-		this.streamer = streamer;
+        super();
+        this.streamer = streamer;
 		this.wsPath = "ws://ghostoflegbot.website/ws/" + this.streamer;
 		this.websocket = new WebSocket();
 		this.stats = {};

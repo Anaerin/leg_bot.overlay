@@ -1,9 +1,10 @@
-﻿const EventEmitter = require("events").EventEmitter;
+﻿"use strict";
+const EventEmitter = require("events").EventEmitter;
 
 // Make us a controller for all the websockets we're going to be getting.
 module.exports = class WebsocketListener extends EventEmitter {
 	constructor(Server, ConnectionType) {
-
+        super();
 		// Set up some basic containers.
 		this.Server = Server;
 		this.Type = ConnectionType;
@@ -14,17 +15,17 @@ module.exports = class WebsocketListener extends EventEmitter {
 		this.Server.on("request", (request) => {
 
 			// Is this a connection of the type we're interested in?
-			if (request.origin == this.Type) {
+            if (request.requestedProtocols && request.requestedProtocols[0] == this.Type.toLowerCase()) {
 
 				// Accept the connection.
-				var connection = request.accept(this.Type, request.origin);
+				var connection = request.accept(this.Type.toLowerCase());
 				connection.parent = this;
 				// Hook the message event, so we get something when we get a message.
 				connection.on("message", function (message) {
 
 					// Is this message text?
 					if (message.type === 'utf8') {
-						//console.log('WSController(%s): Received Message: %s', this.Type, message.utf8Data);
+						//console.log('WSController(%s): Received Message: %s', this.parent.Type, message.utf8Data);
 
 						// Try and parse it.
 						try {
@@ -36,14 +37,16 @@ module.exports = class WebsocketListener extends EventEmitter {
 							return;
 						} finally {
 							// Replay received message to other connected sockets
-							this.parent.Connections.forEach(function (connection) {
-								if (connection !== this) {
-									connection.send(message.utf8Data);
-								}, this);
+                            this.parent.Connections.forEach(function (connection) {
+                                if (connection !== this) {
+                                    connection.send(message.utf8Data);
+                                }
+                            }, this);
 
 							// Emit event for the type (if it has one)
 							if (data.type) {
-								this.parent.emit("ReceivedJSON:" + data.type.toString().toLowerCase(), data);
+                                //console.log("WSController(%s): Emitting event 'ReceivedJSON:%s'", this.Type, data.type.toString().toLowerCase());
+                                this.parent.emit("ReceivedJSON:" + data.type.toString().toLowerCase(), data);
 							}
 
 							// Emit event that we've received data, in case someone wants to hook everything.
@@ -58,7 +61,7 @@ module.exports = class WebsocketListener extends EventEmitter {
 				// When the connection closes, clean up after ourselves.
 				connection.on("close", function (reasonCode, description) {
 					console.log("WSController(%s): Connection Closed (%s): %s", this.parent.Type, reasonCode, description);
-					this.parent.Connections.splice(parent.Connections.indexOf(this), 1);
+					this.parent.Connections.splice(this.parent.Connections.indexOf(this), 1);
 				});
 
 				// Add this connection to our collection, for later correction.

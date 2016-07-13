@@ -62,15 +62,13 @@
 		<input type="text" name="DonationName" id="DonationName" placeholder="Donator" /><input type="text" name="DonationCurrencySymbol" id="DonationCurrencySymbol" placeholder="$" /><input type="text" name="DonationAmount" id="DonationAmount" placeholder="0.00" /><button id="TestDonation">Test New Donation</button><br />
 		<input type="text" name="CounterName" id="CounterName" placeholder="Counter Name"/><input type="text" name="CounterValue" id="CounterValue" placeholder="5" /><button id="TestCounter">Test Counter Update</button>
 	</div>
-	<div class="rightside">
-		<iframe src="http://www.twitch.tv/anaerin/chat"></iframe>
-	</div>
+    <div class="rightside" id="MessageLog"></div>
 	<script language="JavaScript" type="text/javascript">
 		"use strict";
 		// Initialize everything when the window finishes loading
 		var socket;
 		function connectSocket(url) {
-			socket = new WebSocket(url, "overlay");
+			socket = new WebSocket(url, "control");
 
 			socket.onopen = function (event) {
 			    document.getElementById("close").disabled = false;
@@ -80,16 +78,12 @@
 				for (var i = 0; i < buttons.length; i++) {
 					buttons[i].disabled = false;
 				}
-				var webcamList = document.getElementById("WebcamList");
-				while (webcamList.firstChild) {
-					webcamList.removeChild(webcamList.firstChild);
-				}
-				socket.send(JSON.stringify({ name: "GetWebcams", data: "" }));
 			};
 
 			// Display messages received from the server
 			socket.onmessage = function (event) {
 			    document.getElementById("message").innerHTML = "Server Says: " + event.data;
+			    document.getElementById("MessageLog").innerHTML += event.data + "<br />";
 				var messageObj = {};
 				try {
 					messageObj = JSON.parse(event.data);
@@ -97,9 +91,8 @@
 					// Not JSON, we don't care;
 					return;
 				}
-				if (messageObj.name == "AuthKeyRequest") {
-					var url = "https://streamtip.com/api/oauth2/authorize?response_type=code&client_id=" + escape(messageObj.clientID) + "&redirect_uri=" + escape(messageObj.redirectURL);
-					window.location.href = url;
+				if (messageObj.type == "NeedAuth") {
+				    window.location.href = messageObj.value;
 				}
 				if (messageObj.name == "Webcam") {
 					var newOpt = document.createElement("option");
@@ -120,6 +113,7 @@
 					buttons[i].disabled = true;
 				}
 				document.getElementById("status").innerHTML = "Not Connected";
+				document.getElementById("open").disabled = false;
 			});
 		}
 		window.addEventListener("load", function (event) {
@@ -150,28 +144,28 @@
 					while (webcamList.firstChild) {
 						webcamList.removeChild(webcamList.firstChild);
 					}
-					socket.send(JSON.stringify({ name: "GetWebcams", data: "" }));
+					socket.send(JSON.stringify({ type: "GetWebcams", data: "" }));
 				},
 				"SetWebcam": function (event) {
-					socket.send(JSON.stringify({ name: "SetWebcam", data: document.getElementById("WebcamList").value }));
+					socket.send(JSON.stringify({ type: "SetWebcam", data: document.getElementById("WebcamList").value }));
 				},
 				"ShowWebcam": function (event) {
-					socket.send(JSON.stringify({ name: "ShowWebcam", data: "" }));
+					socket.send(JSON.stringify({ type: "ShowWebcam", data: "" }));
 				},
 				"HideWebcam": function (event) {
-					socket.send(JSON.stringify({ name: "HideWebcam", data: "" }));
+					socket.send(JSON.stringify({ type: "HideWebcam", data: "" }));
 				},
 				"SwitchToAFK": function (event) {
-					socket.send(JSON.stringify({ name: "SwitchToAFK", data: "" }));
+					socket.send(JSON.stringify({ type: "SwitchToAFK", data: "" }));
 				},
 				"SwitchToGame": function (event) {
-					socket.send(JSON.stringify({ name: "SwitchToGame", data: "" }));
+					socket.send(JSON.stringify({ type: "SwitchToGame", data: "" }));
 				},
 				"SwitchToBooth": function (event) {
-					socket.send(JSON.stringify({ name: "SwitchToBooth", data: "" }));
+					socket.send(JSON.stringify({ type: "SwitchToBooth", data: "" }));
 				},
 				"TestFollow": function (event) {
-					socket.send(JSON.stringify({ name: "TestFollow", data: { username: document.getElementById("FollowerName").value } }));
+					socket.send(JSON.stringify({ type: "TestFollow", data: { username: document.getElementById("FollowerName").value } }));
 				},
 				"TestDonation": function (event) {
 					var Name = document.getElementById("DonationName").value;
@@ -179,16 +173,16 @@
 					if (Symbol == "") Symbol = "$";
 					var Amount = document.getElementById("DonationAmount").value;
 					Amount = Number(Amount).toFixed(2);
-					socket.send(JSON.stringify({ name: "TestDonation", data: { username: Name, currencySymbol: Symbol, amount: Amount } }));
+					socket.send(JSON.stringify({ type: "TestDonation", data: { username: Name, currencySymbol: Symbol, amount: Amount } }));
 				},
 				"UpdateComment": function (event) {
-					socket.send(JSON.stringify({ name: "UpdateComment", data: document.getElementById("GameComment").value }));
+					socket.send(JSON.stringify({ type: "UpdateComment", data: document.getElementById("GameComment").value }));
 				},
 				"UpdateAFK": function (event) {
-					socket.send(JSON.stringify({ name: "UpdateAFK", data: document.getElementById("AFKComment").value }));
+					socket.send(JSON.stringify({ type: "UpdateAFK", data: document.getElementById("AFKComment").value }));
 				},
 				"TestCounter": function (event) {
-					socket.send(JSON.stringify({ name: "TestStat", data: { action: "StatChanged", stat: document.getElementById("CounterName").value, value: document.getElementById("CounterValue").value } }));
+					socket.send(JSON.stringify({ type: "TestStat", data: { action: "StatChanged", stat: document.getElementById("CounterName").value, value: document.getElementById("CounterValue").value } }));
 				}
 			}
 			Object.keys(buttonEvents).forEach(function (button) {

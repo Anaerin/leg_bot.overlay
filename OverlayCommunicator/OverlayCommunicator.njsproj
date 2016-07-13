@@ -80,6 +80,7 @@
     <Folder Include="Overlay\css\" />
     <Folder Include="Overlay\js\" />
     <Folder Include="Overlay\font\" />
+    <Folder Include="Overlay\code\" />
     <Folder Include="typings\" />
     <Folder Include="typings\globals\" />
     <Folder Include="typings\globals\node\" />

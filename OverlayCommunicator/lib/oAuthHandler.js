@@ -1,17 +1,20 @@
-﻿const EventEmitter = require("events").EventEmitter,
+﻿"use strict";
+const EventEmitter = require("events").EventEmitter,
 	HTTPS = require("https").request,
 	URL = require("url"),
 	QueryString = require("querystring");
 
 module.exports = class oAuthHandler extends EventEmitter {
 	constructor(clientID, clientSecret, authPath) {
-		this.clientID = clientID;
+        super();
+        this.clientID = clientID;
 		this.clientSecret = clientSecret;
 		this.authPath = authPath;
 		this.AccessToken = false;
 		this.AccessTokenExpires = false;
 		this.RefreshToken = false;
-		this.RefreshTokenExpires = false;
+        this.RefreshTokenExpires = false;
+        this.waitingForToken = false;
 		this.waitingCallbacks = [];
 	}
 
@@ -27,7 +30,8 @@ module.exports = class oAuthHandler extends EventEmitter {
 			if (this.RefreshToken && this.RefreshTokenExpires > Date.now().getTime()) {
 				return this.refreshTokenWithRefreshToken();
 			}
-			this.emit("NeedAuth");
+            this.waitingForToken = true;
+            this.emit("NeedAuth");
 		}
 		return isValid;
 	}
@@ -41,7 +45,7 @@ module.exports = class oAuthHandler extends EventEmitter {
 			'Content-Length': Buffer.byteLength(requestData)
 		};
 		var complete = false;
-		var request = HTTPS.request(requestOptions, res => {
+		var request = HTTPS(requestOptions, res => {
 			res.setEncoding('utf8');
 			res.on('data', chunk => {
 				try {
@@ -58,7 +62,8 @@ module.exports = class oAuthHandler extends EventEmitter {
 						this.RefreshTokenExpires = Date.now().getTime() + 2592000000;
 					}
 					//Here's hoping we don't get multi-chunk data. The try/catch should sort it out, hopefully...
-					complete = true;
+                    complete = true;
+                    this.emit("AuthComplete");
 				};
 			});
 		});
@@ -71,7 +76,7 @@ module.exports = class oAuthHandler extends EventEmitter {
 			client_id: this.clientID,
 			client_secret: this.clientSecret,
 			grant_type: "refresh_token",
-			redirect_uri: "http://localhost:3000/code",
+			redirect_uri: "http://localhost:8000/code",
 			refresh_token: this.RefreshToken
 		}
 		return this.getToken(tokenRefresher);
@@ -83,13 +88,17 @@ module.exports = class oAuthHandler extends EventEmitter {
 			return false;
 		}
 	}
-	set accessToken(value) {
-		var tokenGetter = {
-			client_id: this.clientID,
-			client_secret: this.clientSecret,
-			grant_type: "authorization_code",
-			redirect_uri: "http://localhost:3000/code",
-			code: value
-		}
-		this.getToken(tokenGetter);
+    set accessToken(value) {
+        if (this.waitingForToken) {
+            var tokenGetter = {
+                client_id: this.clientID,
+                client_secret: this.clientSecret,
+                grant_type: "authorization_code",
+                redirect_uri: "http://localhost:3000/code",
+                code: value
+            }
+            this.getToken(tokenGetter);
+            this.waitingForToken = false;
+        }
+    }
 }
