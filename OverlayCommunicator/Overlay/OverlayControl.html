@@ -17,6 +17,7 @@
 			position: absolute;
 			top: 0px;
 			left: 0px;
+            height: 100%;
 		}
 
 		.rightside {
@@ -28,11 +29,65 @@
 			top: 0px;
 			bottom: 0px;
 			max-height: 100%;
+            overflow: hidden;
+            background-color: #cccccc;
 		}
 
-			.rightside iframe {
+		.rightside #MessageLog {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            right: 0px;
+            bottom: 1.75em;
+            overflow: hidden;
+            display: table-cell;
+            vertical-align: bottom;
+		}	
+        .rightside .ChatLine {
+            margin-left: 9em;
+            border-left: 2px inset #cccccc;
+            padding-left: 0.5em;
+        }
+        .rightside .WhisperLine {
+            margin-left: 9em;
+            border-left: 2px inset #cccccc;
+            padding-left: 0.5em;
+            font-style: italic;
+        }
+        .rightside #ChatInput {
+				position: absolute;
+				bottom: 0px;
+				right: 0px;
+				left: 5px;
+                width: 100%;
+			}
+            
+			.rightside img.emoticon {
+				height: 2em;
+			}
+			.rightside div.UserName {
+				display: inline-block;
+                width: 8em;
+                text-align: right;
+                margin-right: 1em;
+                margin-left: -9em;
+			}
+            .rightside div.Broadcaster {
+                font-weight: bold;
+            }
+			.DebugScroll {
+				position: absolute;
+				bottom: 0px;
+				left: 0px;
 				width: 100%;
-				height: 100%;
+                overflow: hidden;
+                display: table-cell;
+                vertical-align: bottom;
+                background-color: #cccccc;
+                max-height: 50%;
+			}
+			.DebugScroll div {
+
 			}
 	</style>
 </head>
@@ -61,18 +116,76 @@
 		<input type="text" name="FollowerName" id="FollowerName" placeholder="Follower Name" /><button id="TestFollow">Test New Follower</button><br />
 		<input type="text" name="DonationName" id="DonationName" placeholder="Donator" /><input type="text" name="DonationCurrencySymbol" id="DonationCurrencySymbol" placeholder="$" /><input type="text" name="DonationAmount" id="DonationAmount" placeholder="0.00" /><button id="TestDonation">Test New Donation</button><br />
 		<input type="text" name="CounterName" id="CounterName" placeholder="Counter Name"/><input type="text" name="CounterValue" id="CounterValue" placeholder="5" /><button id="TestCounter">Test Counter Update</button>
+		<div class="DebugScroll" id="DebugScroll"></div>
 	</div>
-    <div class="rightside" id="MessageLog"></div>
+	<div class="rightside"><div id="MessageLog"></div><input type="text" name="ChatInput" id="ChatInput" /></div>
 	<script language="JavaScript" type="text/javascript">
 		"use strict";
 		// Initialize everything when the window finishes loading
 		var socket;
+		function sendChat(text) {
+			if (socket) {
+				socket.send(JSON.stringify({ type: "ChatInput", value: text }));
+			}
+		}
+		document.getElementById("ChatInput").addEventListener("keyup", function (event) {
+			if (event.keyCode == 13) {
+				sendChat(event.currentTarget.value);
+				event.currentTarget.value = "";
+				event.preventDefault();
+				event.returnValue = false;
+			}
+		});
+		function htmlEscape(str) {
+		    return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+		}
+		function formatUser(userState) {
+		    var output = "<div class=\"UserName Turbo ";
+		    if (userState.badges) {
+		        if (userState.badges.broadcaster == 1) output += "Broadcaster ";
+		        if (userState.badges.moderator == 1) output += "Moderator ";
+		        if (userState.badges.turbo == 1) output += "Turbo ";
+		        if (userState.badges.subscriber == 1) output += "Subscriber ";
+		    }
+		    output += "\">" + userState['display-name'] + "</div>";
+		    return output;
+		}
+		function formatChatMessage(message) {
+			return "<div class=\"ChatLine\">" + formatUser(message.userstate) + formatEmotes(message.message, message.userstate.emotes) + "</div>";
+		}
+		function formatWhisperMessage(message) {
+		    return "<div class=\"WhisperLine\">" + formatUser(message.userstate) + formatEmotes(message.message, message.userstate.emotes) + "</div>";
+		}
+		function formatEmotes(text, emotes) {
+			var splitText = text.split('');
+			for (var i in emotes) {
+				var e = emotes[i];
+				for (var j in e) {
+					var mote = e[j];
+					if (typeof mote == 'string') {
+						mote = mote.split('-');
+						mote = [parseInt(mote[0]), parseInt(mote[1])];
+						var length = mote[1] - mote[0],
+							empty = Array.apply(null, new Array(length + 1)).map(function () { return '' });
+						splitText = splitText.slice(0, mote[0]).concat(empty).concat(splitText.slice(mote[1] + 1, splitText.length));
+						splitText.splice(mote[0], 1, '<img class="emoticon" src="http://static-cdn.jtvnw.net/emoticons/v1/' + i + '/3.0">');
+					}
+				}
+			}
+			return splitText.join('');
+		}
+
 		function connectSocket(url) {
 			socket = new WebSocket(url, "control");
 
 			socket.onopen = function (event) {
-			    document.getElementById("close").disabled = false;
-			    document.getElementById("open").disabled = true;
+				document.getElementById("close").disabled = false;
+				document.getElementById("open").disabled = true;
 				document.getElementById("status").innerHTML = "Connected";
 				var buttons = document.getElementsByTagName("button");
 				for (var i = 0; i < buttons.length; i++) {
@@ -83,7 +196,9 @@
 			// Display messages received from the server
 			socket.onmessage = function (event) {
 			    document.getElementById("message").innerHTML = "Server Says: " + event.data;
-			    document.getElementById("MessageLog").innerHTML += event.data + "<br />";
+			    document.getElementById("DebugScroll").innerHTML += "<div>" + htmlEscape(event.data) + "</div>";
+			    document.getElementById("DebugScroll").lastChild.scrollIntoView();
+				console.log("Got message: %s", event.data);
 				var messageObj = {};
 				try {
 					messageObj = JSON.parse(event.data);
@@ -92,7 +207,14 @@
 					return;
 				}
 				if (messageObj.type == "NeedAuth") {
-				    window.location.href = messageObj.value;
+					//window.alert('Taking you to: ' + messageObj.value);
+					window.location.href = messageObj.value;
+				}
+				if (messageObj.type == "ChatMessage") {
+				    document.getElementById("MessageLog").innerHTML += formatChatMessage(messageObj);
+				}
+				if (messageObj.type == "ChatWhisper") {
+				    document.getElementById("MessageLog").innerHTML += formatWhisperMessage(messageObj);
 				}
 				if (messageObj.name == "Webcam") {
 					var newOpt = document.createElement("option");
@@ -100,11 +222,12 @@
 					newOpt.appendChild(document.createTextNode(messageObj.CamName));
 					document.getElementById("WebcamList").appendChild(newOpt);
 				}
+                if (document.getElementById("MessageLog").lastChild) document.getElementById("MessageLog").lastChild.scrollIntoView();
 			};
 
 			// Display any errors that occur
 			socket.addEventListener("error", function (event) {
-			    document.getElementById("message").innerHTML = "Error: " + event.message;
+				document.getElementById("message").innerHTML = "Error: " + event.message;
 			});
 
 			socket.addEventListener("close", function (event) {
@@ -119,14 +242,14 @@
 		window.addEventListener("load", function (event) {
 			// Create a new connection when the Connect button is clicked
 			document.getElementById("open").addEventListener("click", function (event) {
-			    document.getElementById("open").disabled = true;
+				document.getElementById("open").disabled = true;
 				connectSocket("ws://" + location.host);
 			});
 
 			// Close the connection when the Disconnect button is clicked
 			document.getElementById("close").addEventListener("click", function (event) {
-			    document.getElementById("close").disabled = true;
-			    document.getElementById("message").innerHTML = "Disconnecting...";
+				document.getElementById("close").disabled = true;
+				document.getElementById("message").innerHTML = "Disconnecting...";
 				socket.close();
 			});
 			var buttons = document.getElementsByTagName("button");

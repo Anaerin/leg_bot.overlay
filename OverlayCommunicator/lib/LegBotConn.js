@@ -12,9 +12,11 @@ module.exports = class LegBotConnector extends EventEmitter {
 		this.stats = {};
 		this.game = {};
 		this.websocket.on("connect", (connection) => {
-			this.wsConn = connection;
-			this.wsConn.on("message", (message) => {
+			console.log("LegBotConn: Websocket Connected!");
+			connection.on("message", (message) => {
+				console.log("LegBotConn: It's alive! Received %s!", message.type);
 				if (message.type == "utf8") {
+					console.log("LegBotConn: It's UTF8, and it reads %s!", message.utf8Data);
 					this.messageReceived(JSON.parse(message.utf8Data));
 				} else {
 					console.log("LegBotConnector: Received unknown datatype (%s)", message.type);
@@ -22,13 +24,12 @@ module.exports = class LegBotConnector extends EventEmitter {
 			});
 		});
 		this.websocket.on("connectFailed", (errorDescription) => {
-			console.log("LegBotConnector: Error connecting - %s", errorDescription);
+			console.log("LegBotConnector: Websocket ConnectFailed - %s", errorDescription);
 		});
 		this.fetchValues();
 	}
 	fetchValues() {
-		var request = HTTP.request({
-			method: "get",
+		var request = HTTP.get({
 			hostname: "ghostoflegbot.website",
 			port: 80,
 			path: "/api/channel/" + this.streamer
@@ -36,7 +37,7 @@ module.exports = class LegBotConnector extends EventEmitter {
 			res.setEncoding("utf8");
 			var returnData = "";
 			res.on("data", (data) => {
-				try {
+                try {
 					var result = JSON.parse(returnData + data);
 				} catch (e) {
 					returnData += data;
@@ -44,7 +45,7 @@ module.exports = class LegBotConnector extends EventEmitter {
 					if (result) {
 						this.game = result.game;
 						this.emit("GameChanged", this.game);
-						this.statistics.forEach((stat) => {
+                        result.statistics.forEach(stat => {
 							this.stats[stat] = result.counts[stat];
 							this.emit("StatChanged", stat, result.counts[stat]);
 						});

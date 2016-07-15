@@ -19,19 +19,27 @@ module.exports = class oAuthHandler extends EventEmitter {
 	}
 
 	hasValidToken() {
-		var isValid = false;
-		if (this.AccessToken) {
-			isValid = true;
+        //console.log("%s:Checking for valid token", this.authPath);
+        var isValid = false;
+        if (this.AccessToken) {
+            //console.log("%s:Have token", this.authPath);
+            isValid = true;
 		}
-		if (this.AccessTokenExpires && this.AccessTokenExpires < Date.now().getTime()) {
-			isValid = false;
+		if (this.AccessTokenExpires && this.AccessTokenExpires < new Date(Date.now()).getTime()) {
+            //console.log("%s:Token has expiry, and has expired", this.authPath);
+            isValid = false;
 		}
-		if (!isValid) {
-			if (this.RefreshToken && this.RefreshTokenExpires > Date.now().getTime()) {
-				return this.refreshTokenWithRefreshToken();
+        if (!isValid) {
+            //console.log("%s:Token is not valid thus far...", this.authPath);
+            if (this.RefreshToken && this.RefreshTokenExpires > new Date(Date.now()).getTime()) {
+                //console.log("%s:Have valid refresh token, using it", this.authPath);
+                return this.refreshTokenWithRefreshToken();
 			}
-            this.waitingForToken = true;
-            this.emit("NeedAuth");
+            if (!this.waitingForToken) {
+                //console.log("%s:Token is invalid, and we're not waiting for a token currently", this.authPath);
+                this.waitingForToken = true;
+                this.emit("NeedAuth");
+            }
 		}
 		return isValid;
 	}
@@ -55,18 +63,36 @@ module.exports = class oAuthHandler extends EventEmitter {
 					returnData += chunk
 				}
 				if (result) {
-					this.AccessToken = result.access_token;
-					this.AccessTokenExpires = Date.now().getTime() + (result.expires_in * 1000);
-					if (result.refresh_token) {
-						this.RefreshToken = result.refresh_token;
-						this.RefreshTokenExpires = Date.now().getTime() + 2592000000;
-					}
+                    //console.log("%s:Retrieved access token: ", this.authPath, result);
+                    this.AccessToken = result.access_token;
+                    if (result.expires_in) {
+                        //console.log("%s:Have expiry time for token", this.authPath);
+                        this.AccessTokenExpires = new Date(Date.now()).getTime() + (result.expires_in * 1000);
+                    } else {
+                        //console.log("%s:No expiry time for token", this.authPath);
+                        this.AccessTokenExpires = false;
+                    }
+                    if (result.refresh_token) {
+                        //console.log("%s:Have refresh token", this.authPath);
+                        this.RefreshToken = result.refresh_token;
+                        this.RefreshTokenExpires = new Date(Date.now()).getTime() + 2592000000;
+                    } else {
+                        //console.log("%s:No refresh token", this.authPath);
+                        this.RefreshToken = false;
+                        this.RefreshTokenExpires = false;
+                    }
 					//Here's hoping we don't get multi-chunk data. The try/catch should sort it out, hopefully...
                     complete = true;
                     this.emit("AuthComplete");
 				};
-			});
-		});
+            });
+            res.on("error", err => {
+                console.log("%s: oAuthHandler response Error: %s", this.authPath, err);
+            });
+        });
+        request.on("error", error => {
+            console.log("%s: Got HTTP error: %s", this.authPath, error);
+        });
 		request.write(requestData);
 		request.end();
 		return complete;
@@ -94,7 +120,7 @@ module.exports = class oAuthHandler extends EventEmitter {
                 client_id: this.clientID,
                 client_secret: this.clientSecret,
                 grant_type: "authorization_code",
-                redirect_uri: "http://localhost:3000/code",
+                redirect_uri: "http://localhost:8000/code",
                 code: value
             }
             this.getToken(tokenGetter);

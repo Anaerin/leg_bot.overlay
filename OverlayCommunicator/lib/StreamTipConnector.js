@@ -1,9 +1,9 @@
 ﻿"use strict";
 const EventEmitter = require("events").EventEmitter,
-	HTTPS = require("https").request,
-	URL = require("url"),
-	QueryString = require("querystring"),
-	StreamTip = require("streamtip");
+    HTTPS = require("https"),
+    URL = require("url"),
+    QueryString = require("querystring"),
+    WebSocket = require("websocket").client;
 
 const oAuth = require("./oAuthHandler.js");
 const StreamTipSecrets = require("../secrets.js").StreamTip;
@@ -23,35 +23,63 @@ module.exports = class StreamTipConnector extends EventEmitter {
             this.emit("AuthComplete");
             if (!this.streamTip) {
                 this.connect();
+                this._goal = this.getActiveGoal();
             }
         });
-		//this.goal = this.getActiveGoal();
     }
     connect() {
         if (this.oAuth.accessToken) {
-            this.streamTip = new StreamTip({
-                clientID: StreamTipSecrets.clientID,
-                accessToken: this.oAuth.accessToken
-            });
-            this.streamTip.on("newTip", (tip) => {
+            this.streamTip = new WebSocket()
+            this.streamTip.on("message", (message) => {
+                var tip = JSON.parse(message.utf8Data);
                 if (tip.goal) {
-                    this.goal = tip.goal;
+                    this._goal = tip.goal;
                 }
                 this.emit("newTip", tip);
             });
+            this.streamTip.on("error", err => {
+                console.log("StreamTipConnector: Error - %s", err.message);
+            });
+            this.streamTip.on("close", reason => {
+                console.log("StreamTipConnector: Websocket closed - %s", err);
+				this.connect();
+            });
+			this.streamTip.connect("wss://streamtip.com/ws?access_token=" + QueryString.escape(this.oAuth.accessToken));
         }
     }
 	getActiveGoal() {
-        if (this.streamTip) {
-            var goals = this.streamTip.API.getAllGoals();
-            goals.forEach(goal => {
-                if (goal.active) {
-                    this.goal = goal;
+        var url = URL.parse("https://streamtip.com/api/goals/active");
+        url['headers'] = {
+            "Authorization": "Bearer " + this.oAuth.accessToken
+        };
+        var request = HTTPS.get(url, res => {
+            res.setEncoding("utf-8");
+            var receivedData = "";
+            res.on("data", chunk => {
+                try {
+                    var result = JSON.parse(receivedData + chunk);
+                } catch (e) {
+                    // Data isn't complete, or didn't parse for some reason
+                    receivedData += chunk
+                }
+                if (result) {
+                    this._goal = result.goal;
                 }
             });
-        }
+            res.on("error", err => {
+                console.log("StreamTip getActiveGoal res error: %s", err);
+            });
+        });
+    }
+    get goal() {
+        if (this._goal) return this._goal;
+        this.getActiveGoal();
+        return this._goal;
     }
     receivedCode(code) {
         this.oAuth.accessToken = code;
+        this.oAuth.on("AuthComplete", () => {
+            this.connect();
+        });
     }
 }
