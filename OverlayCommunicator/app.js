@@ -136,6 +136,10 @@ TwitchConn.on("ChatAction", (username, userstate, message, self) => {
 TwitchConn.on("ChatWhisper", (from, userstate, message, self) => {
 	ControlConn.send({ type: "ChatWhisper", from: from, userstate: userstate, message: message, self: self });
 });
+TwitchConn.on("FollowersPopulated", followers => {
+	ControlConn.sendOne({ type: "FollowerList", followers: followers });
+	OverlayConn.sendOne({ type: "FollowerList", followers: followers });
+});
 
 var StreamTipConn = new StreamTipConnector();
 StreamTipConn.on("NeedAuth", authURL => {

@@ -34,44 +34,66 @@ module.exports = class TwitchConnector extends EventEmitter {
 			}
 		});
 	}
-	getAPIValue(url) {
-		var requestObj = URL.parse(url);
-		requestObj.headers = {
-			Accept: "application/vnd.twitchtv.v3+json",
-			'Client-ID': this.oAuth.clientID,
-			Authorization: "OAuth " + this.oAuth.accessToken
-		}
-		var returnVal;
-		var request = this.tmi.API(requestObj, (err, res, body) => {
-			returnVal = body;
+	setStreamDetails(game, title) {
+		var streamDetails = {};
+		if (game) streamDetails["game"] = game;
+		if (title) streamDetails["title"] = title;
+		putAPIValue("https://api.twitch.tv/kraken/channels/" + this.streamer, streamDetails, (err, res, body) {
+			this.emit("GameUpdated");
 		});
-		return returnVal;
+	}
+	putAPIValue(url, data, callback) {
+		var requestObj = {
+			url: url,
+			headers: {
+				Accept: "application/vnd.twitchtv.v3+json",
+				'Client-ID': this.oAuth.clientID,
+				Authorization: "OAuth " + this.oAuth.accessToken
+			},
+			body: data,
+			method: "put",
+			json: true
+		}
+		var request = this.tmi.api(requestObj, callback);
+	}
+	getAPIValue(url, callback) {
+		var requestObj = {
+			url: url,
+			headers: {
+				Accept: "application/vnd.twitchtv.v3+json",
+				'Client-ID': this.oAuth.clientID,
+				Authorization: "OAuth " + this.oAuth.accessToken
+			}
+		}		
+		var returnVal;
+		var request = this.tmi.api(requestObj, callback);
 	}
 	updateFollowers() {
-		var followerCheck = getAPIValue("https://api.twitch.tv/kraken/channels/" + this.streamer + "/follows?limit=100");
-		followerCheck.follows.forEach(follower => {
-			if (this.followers.contains(follower.user.display_name)) {
-				this.emit("NewFollower", follower.user.display_name);
-				this.followers.push(follower.user.display_name);
-			}
+		this.getAPIValue("https://api.twitch.tv/kraken/channels/" + this.streamer + "/follows?limit=100", (err, res, body) => {
+			body.follows.forEach(follower => {
+				if (this.followers.contains(follower.user.display_name)) {
+					this.emit("NewFollower", follower.user.display_name);
+					this.followers.push(follower.user.display_name);
+				}
+			});
 		});
 	}
-	getFollowers() {
-		var fetchLink = "https://api.twitch.tv/kraken/channels/" + this.streamer + "/follows?limit=100";
-		while (fetchLink) {
-			var results = getAPIValue(fetchLink);
-			this.followerCount = results._total;
-			fetchLink = false;
-			if (results._links.next) {
-				fetchLink = results._links.next;
-			} else {
-				this.emit("FollowersPopulated");
-				this.followerUpdate = setInterval(this.updateFollowers, 60000);
-			}
-			results.follows.forEach(follower => {
+	getFollowers(fetchLink) {
+		if (!fetchLink) fetchLink = "https://api.twitch.tv/kraken/channels/" + this.streamer + "/follows?limit=100";
+		this.getAPIValue(fetchLink, (err, res, body) => {
+			this.followerCount = body._total;
+			body.follows.forEach(follower => {
 				this.followers.push(follower.user.display_name);
 			});
-		}
+			if (body._cursor) {
+				this.getFollowers(body._links.next);
+			} else {
+				this.emit("FollowersPopulated", this.followers);
+				this.followerUpdate = setInterval(() => {
+					this.updateFollowers();
+				}, 60000);
+			}
+		});
 	}
 	connect() {
 		if (this.oAuth.accessToken) {
@@ -125,6 +147,7 @@ module.exports = class TwitchConnector extends EventEmitter {
 					console.log("TwitchConnector: Error: %s", error);
 				});
 				this.tmi.connect();
+				this.getFollowers();
 			}
 		}
 	}
