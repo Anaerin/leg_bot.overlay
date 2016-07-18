@@ -17,7 +17,7 @@
 			position: absolute;
 			top: 0px;
 			left: 0px;
-            height: 100%;
+			height: 100%;
 		}
 
 		.rightside {
@@ -29,77 +29,77 @@
 			top: 0px;
 			bottom: 0px;
 			max-height: 100%;
-            overflow: hidden;
-            background-color: #cccccc;
+			overflow: hidden;
+			background-color: #cccccc;
 		}
 
 		.rightside #MessageLog {
-            position: absolute;
-            top: 0px;
-            left: 0px;
-            right: 0px;
-            bottom: 1.75em;
-            overflow: hidden;
-            display: table-cell;
-            vertical-align: bottom;
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			right: 0px;
+			bottom: 1.75em;
+			overflow: hidden;
+			display: table-cell;
+			vertical-align: bottom;
 			-webkit-transform: scaleY(-1);
 			transform: scaleY(-1);
 			font-size: 1.5em;
 		}	
-        .rightside > div {
+		.rightside > div {
 			text-shadow: 2px 2px 1px white, -2px -2px 1px white, 2px -2px 1px white, -2px 2px 1px white, 3px 3px 5px black;
 			transition: opacity linear 5s;
-        }
+		}
 		.rightside .ChatLine {
-            margin-left: 9em;
-            border-left: 2px inset #cccccc;
-            padding-left: 0.5em;
+			margin-left: 9em;
+			border-left: 2px inset #cccccc;
+			padding-left: 0.5em;
 			-webkit-transform: scaleY(-1);
 			transform: scaleY(-1);
-        }
-        .rightside .WhisperLine {
-            margin-left: 9em;
-            border-left: 2px inset #cccccc;
-            padding-left: 0.5em;
-            font-style: italic;
+		}
+		.rightside .WhisperLine {
+			margin-left: 9em;
+			border-left: 2px inset #cccccc;
+			padding-left: 0.5em;
+			font-style: italic;
 			-webkit-transform: scaleY(-1);
 			transform: scaleY(-1);
-        }
-        fieldset fieldset {
+		}
+		fieldset fieldset {
 			width: 30%;
 			float: left;
-        }
+		}
 		.rightside #ChatInput {
 				position: absolute;
 				bottom: 0px;
 				right: 0px;
 				left: 5px;
-                width: 100%;
+				width: 100%;
 			}
-            
+			
 			.rightside img.emoticon {
 				height: 2em;
 			}
 			.rightside div.UserName {
 				display: inline-block;
-                width: 8em;
-                text-align: right;
-                margin-right: 1em;
-                margin-left: -9em;
+				width: 8em;
+				text-align: right;
+				margin-right: 1em;
+				margin-left: -9em;
 			}
-            .rightside div.Broadcaster {
-                font-weight: bold;
-            }
+			.rightside div.Broadcaster {
+				font-weight: bold;
+			}
 			.DebugScroll {
 				position: absolute;
 				bottom: 0px;
 				left: 0px;
 				width: 100%;
-                overflow: hidden;
-                display: table-cell;
-                vertical-align: bottom;
-                background-color: #cccccc;
-                max-height: 50%;
+				overflow: hidden;
+				display: table-cell;
+				vertical-align: bottom;
+				background-color: #cccccc;
+				max-height: 50%;
 				display: none;
 			}
 			.DebugScroll div {
@@ -208,9 +208,9 @@
 
 			// Display messages received from the server
 			socket.onmessage = function (event) {
-			    // document.getElementById("message").innerHTML = "Server Says: " + event.data;
-			    document.getElementById("DebugScroll").innerHTML += "<div>" + htmlEscape(event.data) + "</div>";
-			    document.getElementById("DebugScroll").lastChild.scrollIntoView();
+				// document.getElementById("message").innerHTML = "Server Says: " + event.data;
+				document.getElementById("DebugScroll").innerHTML += "<div>" + htmlEscape(event.data) + "</div>";
+				document.getElementById("DebugScroll").lastChild.scrollIntoView();
 				console.log("Got message: %s", event.data);
 				var messageObj = {};
 				try {
@@ -238,7 +238,7 @@
 					newOpt.appendChild(document.createTextNode(messageObj.CamName));
 					document.getElementById("WebcamList").appendChild(newOpt);
 				}
-                if (document.getElementById("MessageLog").lastChild) document.getElementById("MessageLog").lastChild.scrollIntoView();
+				if (document.getElementById("MessageLog").lastChild) document.getElementById("MessageLog").lastChild.scrollIntoView();
 			};
 
 			// Display any errors that occur

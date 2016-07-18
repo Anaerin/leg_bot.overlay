@@ -2,21 +2,21 @@
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="utf-8" />
-    <title>Nobody sees this anyway.</title>
-    <link type="text/css" rel="stylesheet" href="css/stylesheet-new.css" />
+	<meta charset="utf-8" />
+	<title>Nobody sees this anyway.</title>
+	<link type="text/css" rel="stylesheet" href="css/stylesheet-new.css" />
 	<script language="Javascript" type="text/javascript" src="js/adapter.js"></script>
 	<script language="Javascript" type="text/javascript" src="js/WebCamDisplay.js"></script>
 	<script language="Javascript" type="text/javascript" src="js/ChatProcessor.js"></script>
 </head>
 <body>
-    <div class="MainWindow"></div>
+	<div class="MainWindow"></div>
 	<div class="LeftHolder"></div>
 	<div class="Logo">A</div>
 	<div class="AFKWindow Hidden" id="afkWindow"><div class="AFKImage" id="AFKMessage"></div></div>
-    <div class="InfoLine">Currently Playing: <span id="Game"></span></div>
+	<div class="InfoLine">Currently Playing: <span id="Game"></span></div>
 	<div class="ProgressLine"><progress id="progressBar"></progress><label for="progressBar" id="progressLabel"></label></div>
-    <fieldset class="EmptyFieldset Donators"><legend>Donations</legend><marquee id="donatorList"></marquee></fieldset>
+	<fieldset class="EmptyFieldset Donators"><legend>Donations</legend><marquee id="donatorList"></marquee></fieldset>
 	<div class="CounterHolder">
 		<fieldset class="Hidden Counter"><legend>Bad Puns</legend><counter data-name="badpun" id="badpun">0</counter></fieldset>
 		<fieldset class="Hidden Counter"><legend>Deaths</legend><counter data-name="death" id="death">0</counter></fieldset>
@@ -25,8 +25,8 @@
 		<fieldset class="Follower"><legend>Follows</legend><span id="FollowerAlert"></span><span id="FollowerCount">0</span></fieldset>
 	</div>
 	<div class="VideoHolder" id="VideoHolder"><video id="webcam" style="width: 100%;" autoplay="autoplay"></video></div>
-    <div id="alert" class=""></div>
-    <script language="JavaScript" type="text/javascript">
+	<div id="alert" class=""></div>
+	<script language="JavaScript" type="text/javascript">
 
 		
 
@@ -43,6 +43,6 @@
 
 		var webcam = new DisplayWebcam(document.getElementById("webcam"));
 
-    </script>
+	</script>
 </body>
 </html>

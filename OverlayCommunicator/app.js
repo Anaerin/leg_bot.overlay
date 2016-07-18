@@ -13,32 +13,32 @@ var WebSocketServer = require('websocket').server,
 
 var server = http.createServer(function (request, response) {
 	//console.log((new Date()) + ' Received request for ' + request.url);
-    var uri = url.parse(request.url, true);
-    
-    if (uri.query && uri.query["code"]) {
-        switch (uri.query["state"]) {
-            case "Twitch":
-                //console.log("Got code for Twitch");
-                TwitchConn.receivedCode(uri.query["code"]);
-                break;
-            case "StreamTip":
-                //console.log("Got code for StreamTip");
-                StreamTipConn.receivedCode(uri.query["code"]);
-                break;
-            default:
-                console.log("Got code for unknown service (%s)", uri.query["state"]);
-        }
-        ControlConn.getNextAuthRequest();
-        response.writeHead(302, "Moved temporarily", { location: "/OverlayControl.html" });
-        response.end();
-    } else {
-        ServeStatic(uri, request, response);
-    }
+	var uri = url.parse(request.url, true);
+	
+	if (uri.query && uri.query["code"]) {
+		switch (uri.query["state"]) {
+			case "Twitch":
+				//console.log("Got code for Twitch");
+				TwitchConn.receivedCode(uri.query["code"]);
+				break;
+			case "StreamTip":
+				//console.log("Got code for StreamTip");
+				StreamTipConn.receivedCode(uri.query["code"]);
+				break;
+			default:
+				console.log("Got code for unknown service (%s)", uri.query["state"]);
+		}
+		ControlConn.getNextAuthRequest();
+		response.writeHead(302, "Moved temporarily", { location: "/OverlayControl.html" });
+		response.end();
+	} else {
+		ServeStatic(uri, request, response);
+	}
 });
 
 function SendAuthCodes(code) {
-    TwitchConn.receivedCode(code);
-    StreamTipConn.receivedCode(code);
+	TwitchConn.receivedCode(code);
+	StreamTipConn.receivedCode(code);
 }
 
 server.listen(8000, function () {
@@ -46,7 +46,7 @@ server.listen(8000, function () {
 });
 
 server.on("error", err => {
-    console.log("Server error: %s", err);
+	console.log("Server error: %s", err);
 });
 
 var wsServer = new WebSocketServer({
@@ -57,10 +57,10 @@ var wsServer = new WebSocketServer({
 var ControlConn = new ControlConnection(wsServer);
 
 ControlConn.on("ReceivedJSON", message => {
-    OverlayConn.send({ type: "ControlMessage", value: message });
-    if (message.type == "ChatInput") {
-        TwitchConn.sendChat(message.value);
-    }
+	OverlayConn.send({ type: "ControlMessage", value: message });
+	if (message.type == "ChatInput") {
+		TwitchConn.sendChat(message.value);
+	}
 });
 
 var OverlayConn = new OverlayConnection(wsServer);
@@ -70,11 +70,11 @@ TwitchConn.on("Status", state => {
 	ControlConn.sendOne({ type: "Status(Twitch)", status: state });
 });
 TwitchConn.on("NeedAuth", authURL => {
-    ControlConn.sendAuthRequest({ type: "NeedAuth", value: authURL });
+	ControlConn.sendAuthRequest({ type: "NeedAuth", value: authURL });
 });
 TwitchConn.on("ChatMessage", (userstate, message, self) => {
-    OverlayConn.send({ type: "ChatMessage", userstate: userstate, message: message, self: self });
-    ControlConn.send({ type: "ChatMessage", userstate: userstate, message: message, self: self });
+	OverlayConn.send({ type: "ChatMessage", userstate: userstate, message: message, self: self });
+	ControlConn.send({ type: "ChatMessage", userstate: userstate, message: message, self: self });
 });
 TwitchConn.connect();
 TwitchConn.on("NewFollower", follower => {
@@ -110,7 +110,7 @@ StreamTipConn.on("Status", state => {
 	ControlConn.sendOne({ type: "Status(StreamTip)", status: state });
 });
 StreamTipConn.on("NeedAuth", authURL => {
-    ControlConn.sendAuthRequest({ type: "NeedAuth", value: authURL });
+	ControlConn.sendAuthRequest({ type: "NeedAuth", value: authURL });
 });
 StreamTipConn.on("newTip", tip => {
 	ControlConn.send({ type: "NewTip", tip: tip.data });
@@ -125,10 +125,10 @@ LegBotConn.on("Status", state => {
 });
 LegBotConn.on("GameChanged", game => {
 	ControlConn.sendOne({ type: "GameChanged", value: game });
-    OverlayConn.sendOne({ type: "GameChanged", value: game });
+	OverlayConn.sendOne({ type: "GameChanged", value: game });
 });
 LegBotConn.on("StatChanged", (stat, value) => {
-    ControlConn.sendByFunc({ type: "StatChanged", stat: stat, value: value }, test => test.stat == stat);
-    OverlayConn.sendByFunc({ type: "StatChanged", stat: stat, value: value }, test => test.stat == stat);
+	ControlConn.sendByFunc({ type: "StatChanged", stat: stat, value: value }, test => test.stat == stat);
+	OverlayConn.sendByFunc({ type: "StatChanged", stat: stat, value: value }, test => test.stat == stat);
 });
 LegBotConn.connect();

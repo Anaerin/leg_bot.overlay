@@ -5,8 +5,8 @@ const EventEmitter = require("events").EventEmitter,
 
 module.exports = class LegBotConnector extends EventEmitter {
 	constructor(streamer) {
-        super();
-        this.streamer = streamer.toLowerCase();
+		super();
+		this.streamer = streamer.toLowerCase();
 		this.wsPath = "ws://ghostoflegbot.website/ws/" + this.streamer;
 		this.websocket = new WebSocket();
 		this.stats = {};
@@ -40,7 +40,7 @@ module.exports = class LegBotConnector extends EventEmitter {
 			res.setEncoding("utf8");
 			var returnData = "";
 			res.on("data", (data) => {
-                try {
+				try {
 					var result = JSON.parse(returnData + data);
 				} catch (e) {
 					returnData += data;
@@ -48,7 +48,7 @@ module.exports = class LegBotConnector extends EventEmitter {
 					if (result) {
 						this.game = result.game;
 						this.emit("GameChanged", this.game);
-                        result.statistics.forEach(stat => {
+						result.statistics.forEach(stat => {
 							this.stats[stat] = result.counts[stat];
 							this.emit("StatChanged", stat, result.counts[stat]);
 						});
