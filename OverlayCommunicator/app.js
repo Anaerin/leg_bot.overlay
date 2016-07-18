@@ -1,35 +1,20 @@
 ﻿"use strict";
-var secrets = require('./secrets.js');
-
-var overlayConnections = [];
-var controlConnections = [];
-var receivedMessage = {};
-
 var ControlConnection = require("./lib/ControlConnection.js");
 var OverlayConnection = require("./lib/OverlayConnection.js");
 var LegBotConnector = require("./lib/LegBotConn.js");
 var TwitchConnector = require("./lib/TwitchConnector.js");
 var StreamTipConnector = require("./lib/StreamTipConnector.js");
+var ServeStatic = require("./lib/ServeStatic.js");
+var Streamer = require("./secrets.js").Streamer;
 
 var WebSocketServer = require('websocket').server,
 	http = require('http'),
-	url = require("url"),
-	path = require("path"),
-	fs = require("fs"),
-    open = require("open");
-
-var contentTypesByExtension = {
-	'.html': "text/html",
-	'.css': "text/css",
-	'.js': "text/javascript"
-};
-
-var bShotOnGoal = false;
+	url = require("url");
 
 var server = http.createServer(function (request, response) {
 	//console.log((new Date()) + ' Received request for ' + request.url);
     var uri = url.parse(request.url, true);
-    var wwwpath = uri.pathname, filename = path.join(process.cwd(), "Overlay", wwwpath);
+    
     if (uri.query && uri.query["code"]) {
         switch (uri.query["state"]) {
             case "Twitch":
@@ -47,31 +32,7 @@ var server = http.createServer(function (request, response) {
         response.writeHead(302, "Moved temporarily", { location: "/OverlayControl.html" });
         response.end();
     } else {
-        fs.exists(filename, function (exists) {
-            if (!exists) {
-                response.writeHead(404, { "Content-Type": "text/plain" });
-                response.write("404 Not Found\n");
-                response.end();
-                return;
-            }
-
-            if (fs.statSync(filename).isDirectory()) filename += '/index.html';
-
-            fs.readFile(filename, "binary", function (err, file) {
-                if (err) {
-                    response.writeHead(500, { "Content-Type": "text/plain" });
-                    response.write(err + "\n");
-                    response.end();
-                    return;
-                }
-                var headers = {};
-                var contentType = contentTypesByExtension[path.extname(filename)];
-                if (contentType) headers["Content-Type"] = contentType;
-                response.writeHead(200, headers);
-                response.write(file, "binary");
-                response.end();
-            });
-        });
+        ServeStatic(uri, request, response);
     }
 });
 
@@ -104,7 +65,10 @@ ControlConn.on("ReceivedJSON", message => {
 
 var OverlayConn = new OverlayConnection(wsServer);
 
-var TwitchConn = new TwitchConnector(secrets.Streamer);
+var TwitchConn = new TwitchConnector(Streamer);
+TwitchConn.on("Status", state => {
+	ControlConn.sendOne({ type: "Status(Twitch)", status: state });
+});
 TwitchConn.on("NeedAuth", authURL => {
     ControlConn.sendAuthRequest({ type: "NeedAuth", value: authURL });
 });
@@ -142,13 +106,23 @@ TwitchConn.on("FollowersPopulated", followers => {
 });
 
 var StreamTipConn = new StreamTipConnector();
+StreamTipConn.on("Status", state => {
+	ControlConn.sendOne({ type: "Status(StreamTip)", status: state });
+});
 StreamTipConn.on("NeedAuth", authURL => {
     ControlConn.sendAuthRequest({ type: "NeedAuth", value: authURL });
 });
+StreamTipConn.on("newTip", tip => {
+	ControlConn.send({ type: "NewTip", tip: tip.data });
+	OverlayConn.send({ type: "NewTip", tip: tip.data });
+});
 StreamTipConn.connect();
 
-var LegBotConn = new LegBotConnector("anaerin");
+var LegBotConn = new LegBotConnector(Streamer);
 // open("http://localhost:8000/OverlayControl.html");
+LegBotConn.on("Status", state => {
+	ControlConn.sendOne({ type: "Status(LegBot)", status: state });
+});
 LegBotConn.on("GameChanged", game => {
 	ControlConn.sendOne({ type: "GameChanged", value: game });
     OverlayConn.sendOne({ type: "GameChanged", value: game });

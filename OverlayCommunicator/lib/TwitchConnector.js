@@ -15,6 +15,7 @@ module.exports = class TwitchConnector extends EventEmitter {
 		this.followerCount = 0;
 		this.oAuth = new oAuth(TwitchSecrets.clientID, TwitchSecrets.clientSecret, "https://api.twitch.tv/kraken/oauth2/token");
 		this.oAuth.on("NeedAuth", () => {
+			this.emit("Status", "Need Auth");
 			this.emit("NeedAuth", "https://api.twitch.tv/kraken/oauth2/authorize" +
 				"?response_type=" + "code" +
 				"&client_id=" + TwitchSecrets.clientID +
@@ -29,6 +30,7 @@ module.exports = class TwitchConnector extends EventEmitter {
 		});
 		this.oAuth.on("AuthComplete", () => {
 			this.emit("AuthComplete");
+			this.emit("Status", "Auth Complete");
 			if (!this.tmi) {
 				this.connect();
 			}
@@ -38,7 +40,7 @@ module.exports = class TwitchConnector extends EventEmitter {
 		var streamDetails = {};
 		if (game) streamDetails["game"] = game;
 		if (title) streamDetails["title"] = title;
-		putAPIValue("https://api.twitch.tv/kraken/channels/" + this.streamer, streamDetails, (err, res, body) {
+		putAPIValue("https://api.twitch.tv/kraken/channels/" + this.streamer, streamDetails, (err, res, body) => {
 			this.emit("GameUpdated");
 		});
 	}
@@ -71,10 +73,13 @@ module.exports = class TwitchConnector extends EventEmitter {
 	updateFollowers() {
 		this.getAPIValue("https://api.twitch.tv/kraken/channels/" + this.streamer + "/follows?limit=100", (err, res, body) => {
 			body.follows.forEach(follower => {
-				if (this.followers.contains(follower.user.display_name)) {
-					this.emit("NewFollower", follower.user.display_name);
-					this.followers.push(follower.user.display_name);
+				var pos = 0;
+				while (pos < this.followers.length) {
+					if (this.followers[pos].toString() == follower.user.display_name.toString()) return;
+					pos++;
 				}
+				this.emit("NewFollower", follower.user.display_name.toString());
+				this.followers.push(follower.user.display_name.toString());
 			});
 		});
 	}
@@ -83,7 +88,7 @@ module.exports = class TwitchConnector extends EventEmitter {
 		this.getAPIValue(fetchLink, (err, res, body) => {
 			this.followerCount = body._total;
 			body.follows.forEach(follower => {
-				this.followers.push(follower.user.display_name);
+				this.followers.push(follower.user.display_name.toString());
 			});
 			if (body._cursor) {
 				this.getFollowers(body._links.next);
@@ -135,15 +140,19 @@ module.exports = class TwitchConnector extends EventEmitter {
 					this.emit("ChatTimeout", username, reason, duration );
 				});
 				this.tmi.on("disconnected", reason => {
+					this.emit("Status", "Reconnecting");
 					console.log("TwitchConnector: Disconnected - %s", reason);
 				});
 				this.tmi.on("connecting", (address, port) => {
+					this.emit("Status", "Connecting");
 					console.log("TwitchConnector: Connecting to %s:%s", address, port);
 				});
 				this.tmi.on("connected", (address, port) => {
+					this.emit("Status", "Connected");
 					console.log("TwitchConnector: Connected to %s:%s", address, port);
 				});
 				this.tmi.on("error", error => {
+					this.emit("Status", "Error");
 					console.log("TwitchConnector: Error: %s", error);
 				});
 				this.tmi.connect();

@@ -6,12 +6,14 @@ const EventEmitter = require("events").EventEmitter,
 module.exports = class LegBotConnector extends EventEmitter {
 	constructor(streamer) {
         super();
-        this.streamer = streamer;
+        this.streamer = streamer.toLowerCase();
 		this.wsPath = "ws://ghostoflegbot.website/ws/" + this.streamer;
 		this.websocket = new WebSocket();
 		this.stats = {};
 		this.game = {};
+		this.emit("Status", "Disconnected");
 		this.websocket.on("connect", (connection) => {
+			this.emit("Status", "Connected");
 			console.log("LegBotConn: Websocket Connected!");
 			connection.on("message", (message) => {
 				console.log("LegBotConn: It's alive! Received %s!", message.type);
@@ -24,6 +26,7 @@ module.exports = class LegBotConnector extends EventEmitter {
 			});
 		});
 		this.websocket.on("connectFailed", (errorDescription) => {
+			this.emit("Status", "Error");
 			console.log("LegBotConnector: Websocket ConnectFailed - %s", errorDescription);
 		});
 		this.fetchValues();
@@ -55,6 +58,7 @@ module.exports = class LegBotConnector extends EventEmitter {
 		});
 	}
 	connect() {
+		this.emit("Status", "Connecting");
 		this.websocket.connect(this.wsPath);
 	}
 	messageReceived(messageJSON) {

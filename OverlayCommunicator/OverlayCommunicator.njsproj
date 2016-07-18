@@ -36,11 +36,14 @@
     <Compile Include="lib\ControlConnection.js" />
     <Compile Include="lib\LegBotConn.js" />
     <Compile Include="lib\oAuthHandler.js" />
+    <Compile Include="lib\ServeStatic.js" />
     <Compile Include="lib\StreamTipConnector.js" />
     <Compile Include="lib\TwitchConnector.js" />
     <Compile Include="lib\WebsocketListener.js" />
     <Compile Include="Overlay\js\adapter.js" />
+    <Compile Include="Overlay\js\ChatProcessor.js" />
     <Compile Include="Overlay\js\StreamerCounts.js" />
+    <Compile Include="Overlay\js\WebCamDisplay.js" />
     <Content Include="Overlay\css\stylesheet-new.css" />
     <Content Include="Overlay\images\WebCamImage.png" />
     <Content Include="Overlay\index-backup.html" />

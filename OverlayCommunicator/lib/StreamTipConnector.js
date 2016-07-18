@@ -13,6 +13,7 @@ module.exports = class StreamTipConnector extends EventEmitter {
         super();
         this.oAuth = new oAuth(StreamTipSecrets.clientID, StreamTipSecrets.clientSecret, "https://streamtip.com/api/oauth2/token");
 		this.oAuth.on("NeedAuth", () => {
+			this.emit("Status", "Need Auth");
 			this.emit("NeedAuth", "https://streamtip.com/api/oauth2/authorize" +
 				"?response_type=" + "code" +
                 "&client_id=" + StreamTipSecrets.clientID +
@@ -25,25 +26,32 @@ module.exports = class StreamTipConnector extends EventEmitter {
                 this.connect();
                 this._goal = this.getActiveGoal();
             }
+			this.emit("Status", "Auth Complete");
         });
     }
     connect() {
-        if (this.oAuth.accessToken) {
+        if (this.oAuth.accessToken && !this.streamTip) {
             this.streamTip = new WebSocket()
-            this.streamTip.on("message", (message) => {
-                var tip = JSON.parse(message.utf8Data);
-                if (tip.goal) {
-                    this._goal = tip.goal;
-                }
-                this.emit("newTip", tip);
-            });
-            this.streamTip.on("error", err => {
-                console.log("StreamTipConnector: Error - %s", err.message);
-            });
-            this.streamTip.on("close", reason => {
-                console.log("StreamTipConnector: Websocket closed - %s", err);
-				this.connect();
-            });
+			this.streamTip.on("connect", connection => {
+				this.emit("Status", "Connected");
+				connection.on("message", message => {
+					var tip = JSON.parse(message.utf8Data);
+					if (tip.goal) {
+						this._goal = tip.goal;
+					}
+					this.emit("newTip", tip);
+				});
+				connection.on("error", err => {
+					this.emit("Status", "Error");
+					console.log("StreamTipConnector: Error - %s", err.message);
+				});
+				connection.on("close", reason => {
+					this.emit("Status", "Reconnecting");
+					console.log("StreamTipConnector: Websocket closed - %s", reason);
+					this.connect();
+				});
+			});
+			this.emit("Status", "Connecting");
 			this.streamTip.connect("wss://streamtip.com/ws?access_token=" + QueryString.escape(this.oAuth.accessToken));
         }
     }

@@ -6,7 +6,8 @@
     <title>Nobody sees this anyway.</title>
     <link type="text/css" rel="stylesheet" href="css/stylesheet-new.css" />
 	<script language="Javascript" type="text/javascript" src="js/adapter.js"></script>
-	<script language="Javascript" type="text/javascript" src="js/StreamerCounts.js"></script>
+	<script language="Javascript" type="text/javascript" src="js/WebCamDisplay.js"></script>
+	<script language="Javascript" type="text/javascript" src="js/ChatProcessor.js"></script>
 </head>
 <body>
     <div class="MainWindow"></div>
@@ -26,99 +27,20 @@
 	<div class="VideoHolder" id="VideoHolder"><video id="webcam" style="width: 100%;" autoplay="autoplay"></video></div>
     <div id="alert" class=""></div>
     <script language="JavaScript" type="text/javascript">
-        //Set up framework objects.
 
-		var alertHandler = new AlertHandler();
-		alertHandler.alertObject = document.getElementById("alert");
-		alertHandler.alertTypes = {
-			follow: {
-				duration: 10000,
-				fadeOut: 2100
-			}
-		}
+		
 
-		var followHandler = new AlertHandler();
-		followHandler.alertObject = document.getElementById("FollowerAlert");
-		followHandler.cssClassObj = document.getElementById("FollowerAlert").parentElement;
+		//Set up framework objects.
 
-		var streamer = new StreamCounters("anaerin");
-		streamer.gameNameItem = document.getElementById("gameName");
-
-		var followers = new FollowerOverlay("anaerin");
-		followers.followerListObj = document.getElementById("followerList");
-		followers.followerCountObj = document.getElementById("FollowerCount");
-		followers.alertHandler = followHandler;
-
-		var socketCommunication = new SocketCommunication();
-
-		socketCommunication.bindCommand("GetWebcams", function (value) {
-			if (webcam.webcams) {
-				webcam.webcams.forEach(function (newCam) {
-					socketCommunication.send({ name: "Webcam", CamName: newCam.label, CamID: newCam.id });
-				});
-			}
+		webSocket = new WebSocket("ws://localhost:8000", "overlay");
+		webSocket.addEventListener("message", event => {
+			
+		});
+		webSocket.addEventListener("close", event => {
+			//Connection died... Re-open it.
+			webSocket = new WebSocket("ws://localhost:8000", "overlay");
 		});
 
-		socketCommunication.bindCommand("SetWebcam", function (value) {
-			webcam.webcamID = value;
-			webcam.connectWebcam();
-		});
-
-		socketCommunication.bindCommand("TestDonation", function (value) {
-			alertHandler.addToQueue({ message: value.username + " just donated " + value.currencySymbol + value.amount + "!", type: "donation" });
-		});
-
-		socketCommunication.bindCommand("TestFollow", function (value) {
-			followHandler.addToQueue({ message: value.username, type: "follow" });
-		});
-
-		socketCommunication.bindCommand("ShowWebcam", function (value) {
-			document.getElementById("VideoHolder").classList.remove("Hidden");
-		});
-
-		socketCommunication.bindCommand("TestStat", function (value) {
-			streamer.onMessage({ data: JSON.stringify(value) });
-		});
-
-		socketCommunication.bindCommand("HideWebcam", function (value) {
-			document.getElementById("VideoHolder").classList.add("Hidden");
-		});
-
-		socketCommunication.bindCommand("UpdateComment", function (value) {
-			document.getElementById("Game").innerHTML = value;
-		});
-
-		socketCommunication.bindCommand("UpdateAFK", function (value) {
-			document.getElementById("AFKMessage").innerHTML = value;
-		});
-
-		socketCommunication.bindCommand("SwitchToAFK", function (value) {
-			document.getElementById("VideoHolder").classList.remove("Booth");
-			document.getElementById("VideoHolder").classList.add("Hidden");
-			document.getElementById("afkWindow").classList.add("Active");
-			document.getElementById("afkWindow").classList.remove("Hidden");
-		});
-
-		socketCommunication.bindCommand("SwitchToGame", function (value) {
-			document.getElementById("afkWindow").classList.remove("Active");
-			document.getElementById("afkWindow").classList.add("Hidden");
-			document.getElementById("VideoHolder").classList.remove("Booth");
-
-		});
-
-		socketCommunication.bindCommand("SwitchToBooth", function (value) {
-			document.getElementById("afkWindow").classList.remove("Active");
-			document.getElementById("afkWindow").classList.add("Hidden");
-			document.getElementById("VideoHolder").classList.remove("Hidden");
-			document.getElementById("VideoHolder").classList.add("Booth");
-		});
-
-		var donators = new DonationUpdater();
-		donators.alertHandler = alertHandler;
-		donators.socketCommunication = socketCommunication;
-		donators.progressObj = document.getElementById("progressBar");
-		donators.progressLabel = document.getElementById("progressLabel");
-		donators.connect();
 		var webcam = new DisplayWebcam(document.getElementById("webcam"));
 
     </script>

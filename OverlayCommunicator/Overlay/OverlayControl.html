@@ -42,19 +42,34 @@
             overflow: hidden;
             display: table-cell;
             vertical-align: bottom;
+			-webkit-transform: scaleY(-1);
+			transform: scaleY(-1);
+			font-size: 1.5em;
 		}	
-        .rightside .ChatLine {
+        .rightside > div {
+			text-shadow: 2px 2px 1px white, -2px -2px 1px white, 2px -2px 1px white, -2px 2px 1px white, 3px 3px 5px black;
+			transition: opacity linear 5s;
+        }
+		.rightside .ChatLine {
             margin-left: 9em;
             border-left: 2px inset #cccccc;
             padding-left: 0.5em;
+			-webkit-transform: scaleY(-1);
+			transform: scaleY(-1);
         }
         .rightside .WhisperLine {
             margin-left: 9em;
             border-left: 2px inset #cccccc;
             padding-left: 0.5em;
             font-style: italic;
+			-webkit-transform: scaleY(-1);
+			transform: scaleY(-1);
         }
-        .rightside #ChatInput {
+        fieldset fieldset {
+			width: 30%;
+			float: left;
+        }
+		.rightside #ChatInput {
 				position: absolute;
 				bottom: 0px;
 				right: 0px;
@@ -85,25 +100,66 @@
                 vertical-align: bottom;
                 background-color: #cccccc;
                 max-height: 50%;
+				display: none;
 			}
 			.DebugScroll div {
 
 			}
+			.rightside #MessageLog .ChatLine:nth-child(1), .rightside #MessageLog .WhisperLine:nth-child(1) {
+				opacity: 1;
+			}
+			.rightside #MessageLog .ChatLine:nth-child(2), .rightside #MessageLog .WhisperLine:nth-child(2)  {
+				opacity: 0.9;
+			}
+			.rightside #MessageLog .ChatLine:nth-child(3), .rightside #MessageLog .WhisperLine:nth-child(3)  {
+				opacity: 0.8;
+			}
+			.rightside #MessageLog .ChatLine:nth-child(4), .rightside #MessageLog .WhisperLine:nth-child(4)  {
+				opacity: 0.7;
+			}
+			.rightside #MessageLog .ChatLine:nth-child(5), .rightside #MessageLog .WhisperLine:nth-child(5)  {
+				opacity: 0.6;
+			}
+			.rightside #MessageLog .ChatLine:nth-child(6), .rightside #MessageLog .WhisperLine:nth-child(6)  {
+				opacity: 0.5;
+			}
+			.rightside #MessageLog .ChatLine:nth-child(7), .rightside #MessageLog .WhisperLine:nth-child(7)  {
+				opacity: 0.4;
+			}
+			.rightside #MessageLog .ChatLine:nth-child(8), .rightside #MessageLog .WhisperLine:nth-child(8)  {
+				opacity: 0.3;
+			}
+			.rightside #MessageLog .ChatLine:nth-child(9), .rightside #MessageLog .WhisperLine:nth-child(9)  {
+				opacity: 0.2;
+			}
+			.rightside #MessageLog .ChatLine:nth-child(10), .rightside #MessageLog .WhisperLine:nth-child(10)  {
+				opacity: 0.1;
+			}
+			.rightside #MessageLog .ChatLine:nth-child(1n+11), .rightside #MessageLog .WhisperLine:nth-child(1n+11)  {
+				opacity: 0;
+			}
 	</style>
+	<script language="JavaScript" type="text/javascript" src="js/ChatProcessor.js"></script>
 </head>
 <body>
 	<div class="leftside">
 		Status: <span id="status"></span><br />
-		Message: <span id="message"></span><br />
 		<input id="open" type="button" value="Connect" />&nbsp;
 		<input id="close" type="button" value="Disconnect" /><br />
 		<fieldset>
-			<legend>Webcam Controls</legend>
-			<button id="GetWebcams">List Webcams</button>
-			<select id="WebcamList"></select>
-			<button id="SetWebcam">Set Webcam</button><br />
-			<button id="ShowWebcam">Show Webcam</button>
-			<button id="HideWebcam">Hide Webcam</button>
+			<legend>Feed Connection Status</legend>
+			<fieldset>
+				<legend>Twitch</legend>
+				<span id="TwitchStatus"></span>
+			</fieldset>
+			<fieldset>
+				<legend>StreamTip</legend>
+				<span id="StreamTipStatus"></span>
+			</fieldset>
+			<fieldset>
+				<legend>Leg_Bot</legend>
+				<span id="LegBotStatus"></span>
+			</fieldset>
 		</fieldset>
 		<fieldset>
 			<legend>Switch Screens</legend>
@@ -136,49 +192,6 @@
 				event.returnValue = false;
 			}
 		});
-		function htmlEscape(str) {
-		    return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-		}
-		function formatUser(userState) {
-		    var output = "<div class=\"UserName Turbo ";
-		    if (userState.badges) {
-		        if (userState.badges.broadcaster == 1) output += "Broadcaster ";
-		        if (userState.badges.moderator == 1) output += "Moderator ";
-		        if (userState.badges.turbo == 1) output += "Turbo ";
-		        if (userState.badges.subscriber == 1) output += "Subscriber ";
-		    }
-		    output += "\">" + userState['display-name'] + "</div>";
-		    return output;
-		}
-		function formatChatMessage(message) {
-			return "<div class=\"ChatLine\">" + formatUser(message.userstate) + formatEmotes(message.message, message.userstate.emotes) + "</div>";
-		}
-		function formatWhisperMessage(message) {
-		    return "<div class=\"WhisperLine\">" + formatUser(message.userstate) + formatEmotes(message.message, message.userstate.emotes) + "</div>";
-		}
-		function formatEmotes(text, emotes) {
-			var splitText = text.split('');
-			for (var i in emotes) {
-				var e = emotes[i];
-				for (var j in e) {
-					var mote = e[j];
-					if (typeof mote == 'string') {
-						mote = mote.split('-');
-						mote = [parseInt(mote[0]), parseInt(mote[1])];
-						var length = mote[1] - mote[0],
-							empty = Array.apply(null, new Array(length + 1)).map(function () { return '' });
-						splitText = splitText.slice(0, mote[0]).concat(empty).concat(splitText.slice(mote[1] + 1, splitText.length));
-						splitText.splice(mote[0], 1, '<img class="emoticon" src="http://static-cdn.jtvnw.net/emoticons/v1/' + i + '/3.0">');
-					}
-				}
-			}
-			return splitText.join('');
-		}
 
 		function connectSocket(url) {
 			socket = new WebSocket(url, "control");
@@ -195,7 +208,7 @@
 
 			// Display messages received from the server
 			socket.onmessage = function (event) {
-			    document.getElementById("message").innerHTML = "Server Says: " + event.data;
+			    // document.getElementById("message").innerHTML = "Server Says: " + event.data;
 			    document.getElementById("DebugScroll").innerHTML += "<div>" + htmlEscape(event.data) + "</div>";
 			    document.getElementById("DebugScroll").lastChild.scrollIntoView();
 				console.log("Got message: %s", event.data);
@@ -206,15 +219,18 @@
 					// Not JSON, we don't care;
 					return;
 				}
+				if (messageObj.type == "Status(Twitch)") document.getElementById("TwitchStatus").innerHTML = messageObj.status;
+				if (messageObj.type == "Status(StreamTip)") document.getElementById("StreamTipStatus").innerHTML = messageObj.status;
+				if (messageObj.type == "Status(LegBot)") document.getElementById("LegBotStatus").innerHTML = messageObj.status;
 				if (messageObj.type == "NeedAuth") {
 					//window.alert('Taking you to: ' + messageObj.value);
 					window.location.href = messageObj.value;
 				}
 				if (messageObj.type == "ChatMessage") {
-				    document.getElementById("MessageLog").innerHTML += formatChatMessage(messageObj);
+					appendChatMessage(messageObj);
 				}
 				if (messageObj.type == "ChatWhisper") {
-				    document.getElementById("MessageLog").innerHTML += formatWhisperMessage(messageObj);
+					document.getElementById("MessageLog").insertBefore(formatWhisperMessage(messageObj), document.getElementById("MessageLog").firstChild);
 				}
 				if (messageObj.name == "Webcam") {
 					var newOpt = document.createElement("option");
