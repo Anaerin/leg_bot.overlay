@@ -31,7 +31,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="app.js" />
-    <Compile Include="lib\ChatConn.js" />
     <Compile Include="lib\OverlayConnection.js" />
     <Compile Include="lib\ControlConnection.js" />
     <Compile Include="lib\LegBotConn.js" />

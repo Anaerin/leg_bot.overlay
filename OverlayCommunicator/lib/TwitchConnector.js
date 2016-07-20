@@ -40,9 +40,11 @@ module.exports = class TwitchConnector extends EventEmitter {
 		var streamDetails = {};
 		if (game) streamDetails["game"] = game;
 		if (title) streamDetails["title"] = title;
-		putAPIValue("https://api.twitch.tv/kraken/channels/" + this.streamer, streamDetails, (err, res, body) => {
-			this.emit("GameUpdated");
-		});
+		if (!game && !title) {
+			putAPIValue("https://api.twitch.tv/kraken/channels/" + this.streamer, streamDetails, (err, res, body) => {
+				this.emit("GameUpdated");
+			});
+		}
 	}
 	putAPIValue(url, data, callback) {
 		var requestObj = {
@@ -125,7 +127,7 @@ module.exports = class TwitchConnector extends EventEmitter {
 					this.emit("ChatClear");
 				});
 				this.tmi.on("action", (channel, userstate, message, self) => {
-					this.emit("ChatAction", userstate.username, userstate, message, self);
+					this.emit("ChatAction", userstate, message, self);
 				});
 				this.tmi.on("hosted", (channel, username, viewers) => {
 					this.emit("ChatHosted", username, viewers);

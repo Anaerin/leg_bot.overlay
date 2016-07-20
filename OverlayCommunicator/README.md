@@ -1,108 +1,133 @@
 ﻿# OverlayCommunicator
-This is a series of objects, and a tiny node.js websockets server, to make HTML overlay creation and control a lot easier.
+This is a node.js server that connects to multiple services (Leg_Bot, Twitch and Streamtip), and exposes a HTTP server that serves static pages and provides two Websockets interfaces for overlay and control.
 
-So, in source code order, they are:
+The Websockets servers are simple, just relaying whatever events are sent their way. They have replay functionality, so re-connections should re-establish state.
 
-## AlertHandler
-This takes an event and displays it in an alert on-screen.
+There are many objects and interfaces. I will attempt to document the objects and interfaces.
 
-### Initialization
-    var alertHandler = new AlertHandler();
-    alertHandler.alertObject = document.getElementById("alert");
+Before you start, however, you need to set up a secrets file. It should look something like this:
 
-The object can be styled in any manner you like, and will be given a class of "visible" when it is to be shown.
+````Javascript
+module.exports = {
+    Streamer: "[StreamerName]",
+    StreamTip: {
+        clientID: '[Your Client ID]',
+        clientSecret: '[Your Client Secret]',
+        redirectURL: 'http://localhost:8000/code'
+    },
+    Twitch: {
+        clientID: "[Your Client ID]",
+        clientSecret: "[Your Client Secret]",
+        redirectURL: "http://localhost:8000/code"
+    }
+}
+````
 
-### Usage
-    alertHandler.addToQueue({ message: "foo", type: "bar" }); 
+## Websockets Servers
 
-This will display an alert, with the message "foo", and the css class "bar" added, to distinguish it from other alerts.
+On a new connection, the "Replay" event is fired. This allows objects that hook the event to replay information the connection needs to know. For instance, the state of connections.
 
-Used internally by FollowerOverlay and DonationUpdater later in this file.
+When a message is received, the "ReceivedJSON" event is fired, with the JSON received.
 
-## StreamCounters
-Updates counters to show statistics on the currently playing game.
+    .send(data)
+This sends data to the connected clients, and adds it to the replay buffer, so it will be automatically be replayed on connection. The replay buffer will be trimmed to 100 entries, however.
 
-### Initialization
-    var streamer = new StreamCounters("streamer");
-	streamer.countDownItem = document.getElementById("countDown");
-	streamer.gameNameItem = document.getElementById("gameName");
+    .sendOne(data)
+This sends data, like send, but first it removes all other entries in the replay buffer with the same type.
 
-The object MUST be initialized with the name of the streamer it is to retrieve values for.
+    .sendByFunc(data, callback)
+This sends data, like sendOne, but rather than filtering on type, it calls the callback with each option in the buffer, using the returned value to choose whether to keep or remove the entry.
 
-The countDownItem and gameNameItem are optional, and will (if present) be updated with the number of seconds to the next refresh, and the current game name (respectively). It is currently set to update every 60 seconds.
 
-### Usage
+### Overlay
 
-The StreamCounters object will begin updating as soon as it is initialized. When updating, the StreamCounters object searches the document for <counter\> objects, and updates their contents with the data they request using the "data-name" attribute. For example:
+This is a basic implementation of the server.
 
-    <counter data-name="death">0</counter>
+### Control
 
-will be updated with the current "death" value.
+This implements everything that overlay does, with a few added functions to handle a queue of authorization requests.
 
-For debugging, there are two additional values that will be searched for: totalFailures and totalRefreshes. These will be updated with the total number of times the request to ghost\_of\_leg\_bot has failed, and the total number of times the script has attempted to update.
+    .sendAuthRequest(data)
+Adds a request to the auth queue.
 
-## FollowerOverlay
-This displays the current list of followers, and uses the AlertHandler to display an alert (with type of "follow") when a new follower or followers are detected.
+    .getAuthRequest()
+Sends the current top authorization request to connected clients.
 
-### Initialization
-		var followers = new FollowerOverlay("streamer");
-        followers.followerListObj = document.getElementById("followerList");
-		followers.alertHandler = alertHandler;
+    .getNextAuthRequest()
+Grabs the next request in the queue and sends it.
 
-Like StreamCounters, this object MUST be initialized with the name of the streamer it is to retrieve followers for.
+## Websocket Client handlers
 
-followerListObj is optional, and if specified, will be set to the current follower list, in comma-separated format.
+These connect to various servers using websockets. They all emit the "Status" event to keep listeners up-to-date on what's happening.
 
-## SocketCommunication
-This creates a simple websockets tunnel back to an echo app, that allows you to control the overlay using a second browser window.
+### LegBotConn
 
-### Initialization
-    var socketCommunication = new SocketCommunication();
+This needs to be constructed with the name of the streamer you are interested in.
 
-It's pretty simple, really. Doesn't need anything special to initialize. It will attempt to connect to a websockets server on localhost, running on port 8000. Where it gets complicated is the...
+    .connect()
+Attempts to connect to LegBot.
 
-### Usage
-    socketCommunication.bindCommand("Foo", function (value) {
-		//Do something
-	});
-This will bind the sent command "Foo" to execute the function specified. *value* is passed in as the JSON-decoded(if applicable) version of the sent data. For example, if you sent:
+    .fetchValues()
+This will grab the current game and statistics, using a HTTP Get request. When it completes, it will issue "GameChanged" and "StatChanged" events.
 
-    { name: "Foo", data: { bar: "baz", beep: "bloop" }}
- 
-The above command would fire, and value would be an object that looks like: ````{ bar: "baz", beep: "bloop" }````. If you sent:
+When a value is received through the websocket, the "GameChanged" or "StatChanged" events are emitted. If the data received is unknown, then a "MessageReceived" event will be emitted.
 
-    { name: "Foo", data: "spot" }
+### TwitchConector
 
-Then the command would fire and value would be the string literal "spot". And if you sent:
+This needs to be constructed with the streamer name. It also relies on the correct object being in the secrets file.
 
-    { name: "Bar", data: "blah" }
+When an oAuth request is required, using the oAuthHandler library, an "AuthNeeded" event will be emitted, with the argument being the URL to send the user to.
 
-The command would NOT fire (because the name didn't match).  
+    .receivedCode(code)
+Receives the auth code from the oAuth negotiation earlier to complete the auth process.
 
-## DonationUpdater
-***Currently Broken***
+When authorization is complete, an "AuthComplete" event will be emitted, followed by an attempted connection to chat, and fetching the current follower list. Every minute, the first "page" of most recent followers is checked against the internal list, and if there is a new follower, the "NewFollower" event is emitted.
 
-This communicates with streamtip.com to retrieve a realtime display of donators.
+    .setStreamDetails(game, title)
+Will attempt to set the stream game and title using the Twitch API. Game and Title are both optional, though one must be specified.
 
-### Initialization
-	var donators = new DonationUpdater(streamtipClientID, streamtipClientSecret, streamtipRedirectURL);
-	donators.alertHandler = alertHandler;
-	donators.socketCommunication = socketCommunication;
-	donators.connect();
+#### Events
+````AuthNeeded(URL)````
+Raised when authentication is required. The user should be sent to [URL], which will then return the user to the redirect URL specified, with the code in the querystring.
 
-The streamtipClientID, streamtipClientSecret and streamtipRedirectURL *MUST* all match that specified in streamtip for your account, and for this app in particular.
+````AuthComplete()````
+Raised when authentication is complete.
 
-The object will connect a websocket to StreamTip's interface and listen for donations. It will so do some OAuth2 magic (which is currently broken) to authenticate itself. 
+````NewFollower(Follower Name)````
+Raised when a new follower is found.
 
-## DisplayWebcam
+````ChatMessage(Userstate, Message, Self)````
+Raised when a message is received. Userstate is from Twitch, Message is the text of the message, and Self is a boolean of wether this message was sent by us or not.
 
-This sorts out the hassle of getUserMedia, and displays your webcam in the passed-in video object.
+````ChatWhisper(From, Userstate, Message, Self)````
+Raised on a whisper.
 
-### Initialization
-    var webcam = new DisplayWebcam(document.getElementById("webcam"));
+````ChatClear()````
+Raised when chat is cleared by a Moderator.
 
-Note: the object MUST be a HTML5 *video* element.
+````ChatAction(Userstate, Message, Self)````
+Raised when someone makes an action in the channel.
 
-### Usage
+````ChatHosted(Username, Viewers)````
+Raised when the channel is hosted. Username is the hoster, for Viewers viewers.
 
-That's it, really. That's all there is to it. It'll set that video element to your webcam and (try to) set it to play, though having "autoplay" on the element helps too.
+````ChatSubscription(Username)````
+Raised when a user subscribes to the channel.
+
+````ChatResubscription(Username, Months, Message)````
+Raised when a user renews their subscription. Months is the length of subscription, Message is the message they have specified.
+
+````ChatTimeout(Username, Reason, Duration)````
+Raised when a user is timed out.
+
+### StreamTipConnector
+
+Like the TwitchConnector, this uses the oAuth system to authenticate.
+
+#### Events
+
+````NewTip(tip)````
+Raised when a new tip is received. The tip object is passed directly from the StreamTip API.
+
+````GoalUpdated()````
+Raised when the goal is updated.

@@ -93,9 +93,9 @@ TwitchConn.on("ChatResubscription", (username, months, message) => {
 	OverlayConn.send({ type: "ChatResubscription", username: username, months: months, message: message });
 	ControlConn.send({ type: "ChatResubscription", username: username, months: months, message: message });
 });
-TwitchConn.on("ChatAction", (username, userstate, message, self) => {
-	OverlayConn.send({ type: "ChatAction", username: username, userstate: userstate, message: message, self: self });
-	ControlConn.send({ type: "ChatAction", username: username, userstate: userstate, message: message, self: self });
+TwitchConn.on("ChatAction", (userstate, message, self) => {
+	OverlayConn.send({ type: "ChatAction", userstate: userstate, message: message, self: self });
+	ControlConn.send({ type: "ChatAction", userstate: userstate, message: message, self: self });
 });
 TwitchConn.on("ChatWhisper", (from, userstate, message, self) => {
 	ControlConn.send({ type: "ChatWhisper", from: from, userstate: userstate, message: message, self: self });
