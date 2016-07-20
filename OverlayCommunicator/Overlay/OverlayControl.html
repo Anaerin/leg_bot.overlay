@@ -166,8 +166,8 @@
 			<button id="SwitchToAFK">Switch to AFK</button>
 			<button id="SwitchToGame">Switch to Game</button>
 			<button id="SwitchToBooth">Switch to Booth</button>
+			<button id="ToggleWebcam">Toggle Webcam</button>
 		</fieldset>
-		<input type="text" name="GameComment" id="GameComment" placeholder="Comment" /><button id="UpdateComment">Update Comment</button><br />
 		<input type="text" name="AFKComment" id="AFKComment" placeholder="AFK Message" /><button id="UpdateAFK">Update AFK Message</button><br />
 		<input type="text" name="FollowerName" id="FollowerName" placeholder="Follower Name" /><button id="TestFollow">Test New Follower</button><br />
 		<input type="text" name="DonationName" id="DonationName" placeholder="Donator" /><input type="text" name="DonationCurrencySymbol" id="DonationCurrencySymbol" placeholder="$" /><input type="text" name="DonationAmount" id="DonationAmount" placeholder="0.00" /><button id="TestDonation">Test New Donation</button><br />
@@ -232,12 +232,6 @@
 				if (messageObj.type == "ChatWhisper") {
 					document.getElementById("MessageLog").insertBefore(formatWhisperMessage(messageObj), document.getElementById("MessageLog").firstChild);
 				}
-				if (messageObj.name == "Webcam") {
-					var newOpt = document.createElement("option");
-					newOpt.value = messageObj.CamID;
-					newOpt.appendChild(document.createTextNode(messageObj.CamName));
-					document.getElementById("WebcamList").appendChild(newOpt);
-				}
 				if (document.getElementById("MessageLog").lastChild) document.getElementById("MessageLog").lastChild.scrollIntoView();
 			};
 
@@ -288,11 +282,8 @@
 				"SetWebcam": function (event) {
 					socket.send(JSON.stringify({ type: "SetWebcam", data: document.getElementById("WebcamList").value }));
 				},
-				"ShowWebcam": function (event) {
-					socket.send(JSON.stringify({ type: "ShowWebcam", data: "" }));
-				},
-				"HideWebcam": function (event) {
-					socket.send(JSON.stringify({ type: "HideWebcam", data: "" }));
+				"ToggleWebcam": function (event) {
+					socket.send(JSON.stringify({ type: "ToggleWebcam", data: "" }));
 				},
 				"SwitchToAFK": function (event) {
 					socket.send(JSON.stringify({ type: "SwitchToAFK", data: "" }));

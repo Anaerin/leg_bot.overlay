@@ -38,6 +38,7 @@ module.exports = class StreamTipConnector extends EventEmitter {
 					var tip = JSON.parse(message.utf8Data);
 					if (tip.goal) {
 						this._goal = tip.goal;
+						this.emit("GoalUpdated");
 					}
 					this.emit("newTip", tip);
 				});
@@ -72,6 +73,7 @@ module.exports = class StreamTipConnector extends EventEmitter {
 				}
 				if (result) {
 					this._goal = result.goal;
+					this.emit("GoalUpdated");
 				}
 			});
 			res.on("error", err => {

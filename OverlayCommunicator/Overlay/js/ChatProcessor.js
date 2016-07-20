@@ -25,17 +25,29 @@ function formatChatMessage(message) {
 	newDiv.innerHTML = formatUser(message.userstate) + formatEmotes(message.message, message.userstate.emotes);
 	return newDiv;
 }
+
 function formatWhisperMessage(message) {
 	var newDiv = document.createElement("div");
 	newDiv.className = "WhisperLine";
 	newDiv.innerHTML = formatUser(message.userstate) + formatEmotes(message.message, message.userstate.emotes);
 	return newDiv;
 }
-function appendChatMessage(message) {
-	var logObj = document.getElementById("MessageLog");
-	while (logObj.children.length > 20) logObj.removeChild(logObj.lastChild);
-	document.getElementById("MessageLog").insertBefore(formatChatMessage(message), document.getElementById("MessageLog").firstChild);
+
+function formatActionMessage(message) {
+	var newDiv = document.createElement("div");
+	newDiv.className = "ActionLine";
+	newDiv.innerHTML = formatUser(message.userstate) + formatEmotes(message.message, message.userstate.emotes);
+	return newDiv;
 }
+
+function appendChatMessage(message, numMessages, callback) {
+	var logObj = document.getElementById("MessageLog");
+	if (numMessages) {
+		while (logObj.children.length > numMessages) logObj.removeChild(logObj.lastChild);
+	}
+	document.getElementById("MessageLog").insertBefore(callback(message), document.getElementById("MessageLog").firstChild);
+}
+
 function formatEmotes(text, emotes) {
 	var splitText = text.split('');
 	for (var i in emotes) {

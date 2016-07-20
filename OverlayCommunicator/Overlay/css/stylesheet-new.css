@@ -334,8 +334,8 @@ body {
 .VideoHolder {
 	position: absolute;
 	right: 0px;
-	top: 300px;
-	bottom: calc(100% - 500px);
+	top: calc(100% - 290px);
+	bottom: 90px;
 	left: calc(100% - 354px);
 	opacity: 1;
 	transition: 4s opacity ease, 2s top ease, 2s left ease, 2s right ease, 2s bottom ease, 2s background-color ease;
@@ -375,3 +375,74 @@ label[for="progressBar"] {
     bottom: 0px;
 }
 */
+
+#MessageLog .ChatLine:nth-child(1), #MessageLog .WhisperLine:nth-child(1) {
+	opacity: 1;
+}
+#MessageLog .ChatLine:nth-child(2), #MessageLog .WhisperLine:nth-child(2)  {
+	opacity: 0.9;
+}
+#MessageLog .ChatLine:nth-child(3), #MessageLog .WhisperLine:nth-child(3)  {
+	opacity: 0.8;
+}
+#MessageLog .ChatLine:nth-child(4), #MessageLog .WhisperLine:nth-child(4)  {
+	opacity: 0.7;
+}
+#MessageLog .ChatLine:nth-child(5), #MessageLog .WhisperLine:nth-child(5)  {
+	opacity: 0.6;
+}
+#MessageLog .ChatLine:nth-child(6), #MessageLog .WhisperLine:nth-child(6)  {
+	opacity: 0.5;
+}
+#MessageLog .ChatLine:nth-child(7), #MessageLog .WhisperLine:nth-child(7)  {
+	opacity: 0.4;
+}
+#MessageLog .ChatLine:nth-child(8), #MessageLog .WhisperLine:nth-child(8)  {
+	opacity: 0.3;
+}
+#MessageLog .ChatLine:nth-child(9), #MessageLog .WhisperLine:nth-child(9)  {
+	opacity: 0.2;
+}
+#MessageLog .ChatLine:nth-child(10), #MessageLog .WhisperLine:nth-child(10)  {
+	opacity: 0.1;
+}
+#MessageLog .ChatLine:nth-child(1n+11), #MessageLog .WhisperLine:nth-child(1n+11)  {
+	opacity: 0;
+}
+
+
+#MessageLog {
+	position: absolute;
+	top: 0px;
+	right: 70px;
+	bottom: 290px;
+    width: 284px;
+	overflow: hidden;
+	display: table-cell;
+	vertical-align: bottom;
+	-webkit-transform: scaleY(-1);
+	transform: scaleY(-1);
+	font-size: 1.5em;
+}	
+#MessageLog > div {
+	text-shadow: 2px 2px 1px white, -2px -2px 1px white, 2px -2px 1px white, -2px 2px 1px white, 3px 3px 5px black;
+	transition: opacity linear 5s;
+}
+#MessageLog .ChatLine {
+	margin-left: 9em;
+	border-left: 2px inset #cccccc;
+	padding-left: 0.5em;
+	-webkit-transform: scaleY(-1);
+	transform: scaleY(-1);
+}
+
+#MessageLog img.emoticon {
+	height: 2em;
+}
+#MessageLog div.UserName {
+	display: inline-block;
+	width: 8em;
+	text-align: right;
+	margin-right: 1em;
+	margin-left: -9em;
+}

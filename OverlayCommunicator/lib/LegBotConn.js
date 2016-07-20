@@ -14,15 +14,20 @@ module.exports = class LegBotConnector extends EventEmitter {
 		this.emit("Status", "Disconnected");
 		this.websocket.on("connect", (connection) => {
 			this.emit("Status", "Connected");
-			console.log("LegBotConn: Websocket Connected!");
-			connection.on("message", (message) => {
-				console.log("LegBotConn: It's alive! Received %s!", message.type);
+			connection.on("message", message => {
 				if (message.type == "utf8") {
-					console.log("LegBotConn: It's UTF8, and it reads %s!", message.utf8Data);
 					this.messageReceived(JSON.parse(message.utf8Data));
 				} else {
 					console.log("LegBotConnector: Received unknown datatype (%s)", message.type);
 				}
+			});
+			connection.on("close", () => {
+				this.emit("Status", "Reconnecting");
+				this.connect();
+			});
+			connection.on("error", err => {
+				this.emit("Status", "Error: " + err.toString());
+				this.connect();
 			});
 		});
 		this.websocket.on("connectFailed", (errorDescription) => {

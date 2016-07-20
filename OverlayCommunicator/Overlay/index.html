@@ -25,16 +25,119 @@
 		<fieldset class="Follower"><legend>Follows</legend><span id="FollowerAlert"></span><span id="FollowerCount">0</span></fieldset>
 	</div>
 	<div class="VideoHolder" id="VideoHolder"><video id="webcam" style="width: 100%;" autoplay="autoplay"></video></div>
+	<div class="MessageLog" id="MessageLog"></div>
 	<div id="alert" class=""></div>
 	<script language="JavaScript" type="text/javascript">
+		var messageCap = 20;
+		function ToggleWebcam() {
+			document.getElementById("VideoHolder").classList.toggle("hidden");
+		}
+		var updateQueue = [];
+		var queueTimeout;
+		var processingQueue = false;
 
-		
+		function PullQueue() {
+			if (updateQueue.length > 0) {
+				processingQueue = true;
+				var task = updateQueue.shift();
+				task.callback(...task.arguments);
+				queueTimeout = setTimeout(ProcessNext, task.timeout, task.cleanup);
+			} else processingQueue = false;
+		}
+
+		function ProcessNext(cleanup) {
+			if (cleanup) cleanup();
+			PullQueue();
+		}
+
+		function AddToQueue(task) {
+			updateQueue.push(task);
+			if (!processingQueue) PullQueue();
+		}
+
+		function UpdateCounter(counter, value) {
+			var counterID = document.getElementById(counter);
+			counterID.innerHTML = value;
+			counterID.classList.add("updated");
+			counterID.timeout = setTimeout(function (counterID) {
+				counterID.classList.remove("updated");
+			}, 7000, counterID);
+		}
+
+		function NewFollower(followerName) {
+			document.getElementById("FollowerAlert").innerHTML = followerName;
+			document.getElementById("FollowerAlert").classList.add("visible");
+			document.getElementById("FollowerAlert").timeout = setTimeout(function () {
+				document.getElementById("FollowerAlert").classList.remove("visible");
+			}, 7000);
+		}
+
+		function ChatMessage(type, message) {
+			switch (type) {
+				case 'Chat':
+					appendChatMessage(message, messageCap, formatChatMessage);
+					break;
+				case 'Action':
+					appendChatMessage(message, messageCap, formatActionMessage);
+					break;
+				default:
+
+					break;
+			}
+		}
+
+		function GoalUpdate(goal) {
+			if (goal.active) {
+				document.getElementById("progressBar").style.display = "";
+				document.getElementById("progressLabel").style.display = "";
+				document.getElementById("progressBar").max = goal.cents;
+				document.getElementById("progressBar").value = goal.progress.cents;
+				document.getElementById("progressLabel").innerHTML = htmlEscape(goal.title) + ": " + goal.progress.currencySymbol + goal.progress.amount + "/" + goal.progress.currencySymbol + goal.amount + " (" + goal.progress.percentage + "%)";
+			} else {
+				document.getElementById("progressBar").style.display = "none";
+				document.getElementById("progressLabel").style.display = "none";
+			}
+		}
+
+		function NewTip(tip) {
+			var alertObj = document.getElementById("alert");
+			alertObj.innerHTML = htmlEscape(tip.user.displayName) + " Just donated " + tip.currencySymbol + tip.amount + "!";
+			alertObj.classList.add("visible");
+			alertObj.timeout = setTimeout(function () {
+				document.getElementById("alert").classList.remove("visible");
+			}, 7000);
+		}
 
 		//Set up framework objects.
 
 		webSocket = new WebSocket("ws://localhost:8000", "overlay");
 		webSocket.addEventListener("message", event => {
-			
+			switch (event.type) {
+				case "ChatMessage":
+					ChatMessage("Chat", event);
+					break;
+				case "ChatAction":
+					ChatMessage("Action", event);
+					break;
+				case "StatChanged":
+					AddToQueue({callback: UpdateCounter, arguments: [event.stat, event.counter], timeout: 10000});
+					break;
+				case "GameChanged":
+					UpdateGame(event.value);
+					break;
+				case "NewFollower":
+					AddToQueue({ callback: NewFollower, arguments: [event.value], timeout: 10000 });
+					break;
+				case "GoalUpdated":
+					GoalUpdate(event.goal);
+					break;
+				case "newTip":
+					AddToQueue({ callback: NewTip, arguments: [event.tip], timeout: 10000 });
+					break;
+				case "ToggleWebcam":
+					ToggleWebcam();
+					break;
+			}
 		});
 		webSocket.addEventListener("close", event => {
 			//Connection died... Re-open it.

@@ -57,7 +57,7 @@ var wsServer = new WebSocketServer({
 var ControlConn = new ControlConnection(wsServer);
 
 ControlConn.on("ReceivedJSON", message => {
-	OverlayConn.send({ type: "ControlMessage", value: message });
+	OverlayConn.send(message);
 	if (message.type == "ChatInput") {
 		TwitchConn.sendChat(message.value);
 	}
@@ -115,6 +115,10 @@ StreamTipConn.on("NeedAuth", authURL => {
 StreamTipConn.on("newTip", tip => {
 	ControlConn.send({ type: "NewTip", tip: tip.data });
 	OverlayConn.send({ type: "NewTip", tip: tip.data });
+});
+StreamTipConn.on("GoalUpdated", () => {
+	ControlConn.send({ type: "GoalUpdated", goal: StreamTipConn.goal });
+	OverlayConn.send({ type: "GoalUpdated", goal: StreamTipConn.goal });
 });
 StreamTipConn.connect();
 
