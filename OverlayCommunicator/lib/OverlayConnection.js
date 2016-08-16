@@ -35,7 +35,10 @@ module.exports = class OverlayConnection extends EventEmitter {
 			this.replayBuffer.splice(deadCode, 1);
 		});
 	}
-    send(data) {
+	sendOnce(data) {
+		this.connection.send(data);
+	}
+	send(data) {
 		// Add new data to the end of the buffer.
 		var len = this.replayBuffer.push(data);
 

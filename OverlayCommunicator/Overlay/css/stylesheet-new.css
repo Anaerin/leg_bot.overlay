@@ -105,19 +105,30 @@ body {
 	left: 0px;
 	right: 70px;
 	bottom: 40px;
-	background-color: black;
+	background-color: gray;
 	color: white;
-	opacity: 1;
+	opacity: 0;
 	transition: 4s opacity ease;
+    background-image: url(../images/black-linen.png);
 }
+
 .AFKWindow .AFKImage {
 	font-size: xx-large;
 	margin: auto;
 	text-align: center;
 	padding-top: 25%;
 }
-.AFKWindow.Hidden {
-	opacity: 0;
+
+html.AFK .AFKWindow {
+    opacity: 1;
+}
+
+html.Booth .VideoHolder {
+    right: 70px;
+	top: 0px;
+	left: 0px;
+	bottom: 40px;
+	background-color: black;
 }
 
 .LeftHolder {
@@ -125,8 +136,16 @@ body {
 	top: 0px;
 	right: 0px;
 	width: 70px;
-	bottom: 0px;
-	background-color: black;
+	bottom: 40px;
+	/* background-color: black; */
+    background-image: url(../images/black-linen.png);
+    text-shadow: 1px 1px 1px black, -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black;
+    background-color: transparent;
+    transition: background-color ease 2s;
+}
+
+html.Booth .LeftHolder, html.AFK .LeftHolder, html.Booth .InfoLine, html.AFK .InfoLine {
+    background-color: gray;
 }
 
 .Followers, .Donators {
@@ -233,15 +252,17 @@ body {
 	border-style: solid;
 	transition: 1s width ease, 1s opacity ease;
 	height: 50px;
-	background-color: black;
+	/* background-color: black; */
 	opacity: 0.75;
+    text-shadow: 1px 1px 1px black, -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black;
+    overflow: hidden;
 }
 
 .Follower legend {
 	font-size: 18px;
 	font-family: Calibri;
 	text-align: center;
-	background-color: black;
+	/* background-color: black; */
 }
 
 .Follower #FollowerAlert {
@@ -250,21 +271,22 @@ body {
 	position: absolute;
 	left: 5px;
 	top: 14px;
-	width: 0px;
+	width: 329px;
 	height: 45px;
-	opacity: 0;
 	overflow: hidden;
-	transition: 1s width ease;
+	transition: 1s margin-left ease;
 	text-align: center;
+    text-shadow: 1px 1px 1px black, -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black;
+    background-image: url(../images/black-linen.png);
+    margin-left: -335px;
 }
 
 .Follower.visible {
-	width: 300px;
+	width: 400px;
 	opacity: 1;
 }
 .Follower.visible #FollowerAlert {
-	opacity: 1;
-	width: 235px;
+    margin-left: 0px;
 }
 
 #FollowerCount {
@@ -273,6 +295,7 @@ body {
 	position: absolute;
 	right: 0px;
 	top: 20px;
+    text-shadow: 1px 1px 1px black, -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black;
 }
 
 .Counter {
@@ -291,6 +314,7 @@ body {
 	transition: 1s width ease, 1s margin-left ease, 1s padding-left ease, 1s background-color ease, 0.2s opacity ease;
 	background-color: transparent;
 	opacity: 0.75;
+    text-shadow: 1px 1px 1px black, -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black;
 }
 
 .Counter legend {
@@ -313,7 +337,10 @@ body {
 	right: 0px;
 	height: 20px;
 	color: white;
-	background-color: black;
+	background-color: transparent;
+    background-image: url(../images/black-linen.png);
+    text-shadow: 1px 1px 1px black, -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black;
+    transition: background-color ease 2s;
 }
 
 .ProgressLine {
@@ -337,21 +364,16 @@ body {
 	top: calc(100% - 290px);
 	bottom: 90px;
 	left: calc(100% - 354px);
-	opacity: 1;
-	transition: 4s opacity ease, 2s top ease, 2s left ease, 2s right ease, 2s bottom ease, 2s background-color ease;
+	transition: 2s top ease, 2s left ease, 2s right ease, 2s bottom ease, 2s background-color ease;
 	overflow: hidden;
 	background-color: transparent;
 }
-.VideoHolder.Booth {
-	right: 70px;
-	top: 0px;
-	left: 0px;
-	bottom: 40px;
-	background-color: black;
-}
+
 .VideoHolder.Hidden {
-	opacity: 0;
+	right: -345px;
+    left: calc(100%);
 }
+
 video.webcam {
     opacity: 1;
     transition: opacity 2s ease;
@@ -415,34 +437,36 @@ label[for="progressBar"] {
 	position: absolute;
 	top: 0px;
 	right: 70px;
-	bottom: 290px;
-    width: 284px;
+	bottom: 295px;
+    width: 669px;
 	overflow: hidden;
 	display: table-cell;
 	vertical-align: bottom;
 	-webkit-transform: scaleY(-1);
 	transform: scaleY(-1);
-	font-size: 1.5em;
+	font-size: 1.3em;
 }	
 #MessageLog > div {
-	text-shadow: 2px 2px 1px white, -2px -2px 1px white, 2px -2px 1px white, -2px 2px 1px white, 3px 3px 5px black;
+	text-shadow: 1px 1px 1px white, -1px -1px 1px white, 1px -1px 1px white, -1px 1px 1px white;
 	transition: opacity linear 5s;
-}
-#MessageLog .ChatLine {
-	margin-left: 9em;
-	border-left: 2px inset #cccccc;
+	margin-left: 380px;
+	/* border-left: 2px inset #cccccc; */
 	padding-left: 0.5em;
 	-webkit-transform: scaleY(-1);
 	transform: scaleY(-1);
 }
 
 #MessageLog img.emoticon {
-	height: 2em;
+	height: 1.5em;
 }
 #MessageLog div.UserName {
 	display: inline-block;
-	width: 8em;
+	width: 352px;
 	text-align: right;
-	margin-right: 1em;
-	margin-left: -9em;
+	margin-right: 0.5em;
+	margin-left: -369px;
+}
+
+#MessageLog span.UserName {
+
 }

@@ -3,7 +3,7 @@ const EventEmitter = require("events").EventEmitter,
 	URL = require("url"),
 	QueryString = require("querystring"),
 	TMI = require("tmi.js");
-
+const Request = require("request"); // Temporary, to work around a bug in tmi.js
 const oAuth = require("./oAuthHandler.js");
 const TwitchSecrets = require("../secrets.js").Twitch;
 
@@ -13,6 +13,8 @@ module.exports = class TwitchConnector extends EventEmitter {
 		this.streamer = streamer;
 		this.followers = [];
 		this.followerCount = 0;
+		this.game = "";
+		this.title = "";
 		this.oAuth = new oAuth(TwitchSecrets.clientID, TwitchSecrets.clientSecret, "https://api.twitch.tv/kraken/oauth2/token");
 		this.oAuth.on("NeedAuth", () => {
 			this.emit("Status", "Need Auth");
@@ -39,26 +41,40 @@ module.exports = class TwitchConnector extends EventEmitter {
 	setStreamDetails(game, title) {
 		var streamDetails = {};
 		if (game) streamDetails["game"] = game;
-		if (title) streamDetails["title"] = title;
-		if (!game && !title) {
-			putAPIValue("https://api.twitch.tv/kraken/channels/" + this.streamer, streamDetails, (err, res, body) => {
-				this.emit("GameUpdated");
+		if (title) streamDetails["status"] = title;
+		if (game || title) {
+			this.putAPIValue("https://api.twitch.tv/kraken/channels/" + this.streamer.toLowerCase(), { channel: streamDetails }, (err, res, body) => {
+				this.processChannelUpdate(body);
 			});
+		} else {
+			console.log("Got setStreamDetails call with no details... Bug?");
 		}
+	}
+	processChannelUpdate(updateObj) {
+		this.game = updateObj.game;
+		this.title = updateObj.status;
+		this.emit("StreamDetailsUpdated");
+	}
+	getStreamDetails() {
+		this.getAPIValue("https://api.twitch.tv/kraken/channels/" + this.streamer, (err, res, body) => {
+			this.processChannelUpdate(body);
+		});
 	}
 	putAPIValue(url, data, callback) {
 		var requestObj = {
 			url: url,
+			method: "PUT",
+			json: true,
 			headers: {
 				Accept: "application/vnd.twitchtv.v3+json",
 				'Client-ID': this.oAuth.clientID,
 				Authorization: "OAuth " + this.oAuth.accessToken
 			},
-			body: data,
-			method: "put",
-			json: true
+			body: data
 		}
-		var request = this.tmi.api(requestObj, callback);
+		// The following call is broken right now: https://github.com/tmijs/tmi.js/issues/166
+		// var request = this.tmi.api(requestObj, callback);
+		var request = Request(requestObj, callback);
 	}
 	getAPIValue(url, callback) {
 		var requestObj = {
@@ -74,15 +90,19 @@ module.exports = class TwitchConnector extends EventEmitter {
 	}
 	updateFollowers() {
 		this.getAPIValue("https://api.twitch.tv/kraken/channels/" + this.streamer + "/follows?limit=100", (err, res, body) => {
-			body.follows.forEach(follower => {
-				var pos = 0;
-				while (pos < this.followers.length) {
-					if (this.followers[pos].toString() == follower.user.display_name.toString()) return;
-					pos++;
-				}
-				this.emit("NewFollower", follower.user.display_name.toString());
-				this.followers.push(follower.user.display_name.toString());
-			});
+			if (body && body.follows) {
+				body.follows.forEach(follower => {
+					var pos = 0;
+					while (pos < this.followers.length) {
+						if (this.followers[pos].toString() == follower.user.display_name.toString()) return;
+						pos++;
+					}
+					this.emit("NewFollower", follower.user.display_name.toString());
+					this.followers.push(follower.user.display_name.toString());
+				});
+			} else {
+				console.log("TwitchConnector: Got no body or follows. Error reads %s", err);
+			}
 		});
 	}
 	getFollowers(fetchLink) {
@@ -156,6 +176,10 @@ module.exports = class TwitchConnector extends EventEmitter {
 				this.tmi.on("error", error => {
 					this.emit("Status", "Error");
 					console.log("TwitchConnector: Error: %s", error);
+				});
+				this.tmi.on("roomstate", (channel, state) => {
+					this.getStreamDetails();
+					console.log("Got ROOMSTATE, updating twitch details.");
 				});
 				this.tmi.connect();
 				this.getFollowers();

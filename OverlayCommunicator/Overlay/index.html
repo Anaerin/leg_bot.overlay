@@ -29,24 +29,51 @@
 	<div id="alert" class=""></div>
 	<script language="JavaScript" type="text/javascript">
 		var messageCap = 20;
+		function SetAFKMessage(message) {
+			document.getElementById("AFKMessage").innerText = message;
+		}
+
 		function ToggleWebcam() {
-			document.getElementById("VideoHolder").classList.toggle("hidden");
+			document.getElementById("VideoHolder").classList.toggle("Hidden");
+		}
+		function GoAFK() {
+			document.documentElement.classList.remove("Booth");
+			document.documentElement.classList.add("AFK");
+		}
+		
+		function GoBooth() {
+			document.documentElement.classList.add("Booth");
+			document.documentElement.classList.remove("AFK");
+		}
+
+		function GoGame() {
+			document.documentElement.classList.remove("Booth");
+			document.documentElement.classList.remove("AFK");
 		}
 		var updateQueue = [];
 		var queueTimeout;
 		var processingQueue = false;
+		var followers = [];
+		function UpdateGame(gameName) {
+			document.getElementById("Game").innerHTML = gameName;
+		}
 
 		function PullQueue() {
-			if (updateQueue.length > 0) {
-				processingQueue = true;
-				var task = updateQueue.shift();
-				task.callback(...task.arguments);
-				queueTimeout = setTimeout(ProcessNext, task.timeout, task.cleanup);
-			} else processingQueue = false;
+			if (!processingQueue) {
+				if (updateQueue.length > 0) {
+					processingQueue = true;
+					var task = updateQueue.shift();
+					task.callback(...task.arguments);
+					queueTimeout = setTimeout(ProcessNext, task.timeout, task.cleanup);
+				} else {
+					processingQueue = false;
+				}
+			}
 		}
 
 		function ProcessNext(cleanup) {
 			if (cleanup) cleanup();
+			processingQueue = false;
 			PullQueue();
 		}
 
@@ -66,10 +93,12 @@
 
 		function NewFollower(followerName) {
 			document.getElementById("FollowerAlert").innerHTML = followerName;
-			document.getElementById("FollowerAlert").classList.add("visible");
+			document.getElementById("FollowerAlert").parentElement.classList.add("visible");
 			document.getElementById("FollowerAlert").timeout = setTimeout(function () {
-				document.getElementById("FollowerAlert").classList.remove("visible");
+				document.getElementById("FollowerAlert").parentElement.classList.remove("visible");
 			}, 7000);
+			followers.push(followerName);
+			document.getElementById("FollowerCount").innerHTML = followers.length;
 		}
 
 		function ChatMessage(type, message) {
@@ -83,6 +112,15 @@
 				default:
 
 					break;
+			}
+		}
+
+		function ChatTimeout(message) {
+			var messages = document.getElementById("MessageLog").childNodes;
+			for (var i = messages.length; i > 0; i--) {
+				if (messages[i].username == message.username) {
+					messages[i].parentElement.removeChild(messages[i]);
+				}
 			}
 		}
 
@@ -108,41 +146,76 @@
 			}, 7000);
 		}
 
-		//Set up framework objects.
+		function GotFollowerList(newList) {
+			followers = newList;
+			document.getElementById("FollowerCount").innerHTML = followers.length;
+		}
 
-		webSocket = new WebSocket("ws://localhost:8000", "overlay");
-		webSocket.addEventListener("message", event => {
-			switch (event.type) {
-				case "ChatMessage":
-					ChatMessage("Chat", event);
-					break;
-				case "ChatAction":
-					ChatMessage("Action", event);
-					break;
-				case "StatChanged":
-					AddToQueue({callback: UpdateCounter, arguments: [event.stat, event.counter], timeout: 10000});
-					break;
-				case "GameChanged":
-					UpdateGame(event.value);
-					break;
-				case "NewFollower":
-					AddToQueue({ callback: NewFollower, arguments: [event.value], timeout: 10000 });
-					break;
-				case "GoalUpdated":
-					GoalUpdate(event.goal);
-					break;
-				case "newTip":
-					AddToQueue({ callback: NewTip, arguments: [event.tip], timeout: 10000 });
-					break;
-				case "ToggleWebcam":
-					ToggleWebcam();
-					break;
-			}
-		});
-		webSocket.addEventListener("close", event => {
-			//Connection died... Re-open it.
+
+		//Set up framework objects.
+		function createWebSocket() {
 			webSocket = new WebSocket("ws://localhost:8000", "overlay");
-		});
+			webSocket.addEventListener("message", function (event) {
+				var evt = event.data;
+				if (typeof evt === "string") evt = JSON.parse(evt);
+				console.log("Message Received: %s", event.data);
+				switch (evt.type) {
+					case "ChatMessage":
+						ChatMessage("Chat", evt);
+						break;
+					case "ChatAction":
+						ChatMessage("Action", evt);
+						break;
+					case "ChatTimeout":
+						ChatTimeout(evt);
+						break;
+					case "StatChanged":
+						AddToQueue({ callback: UpdateCounter, arguments: [evt.stat, evt.counter], timeout: 10000 });
+						break;
+					case "GameChanged":
+						UpdateGame(evt.value);
+						break;
+					case "NewFollower":
+						AddToQueue({ callback: NewFollower, arguments: [evt.value], timeout: 10000 });
+						break;
+					case "GoalUpdated":
+						GoalUpdate(evt.goal);
+						break;
+					case "NewTip":
+						AddToQueue({ callback: NewTip, arguments: [evt.tip], timeout: 10000 });
+						break;
+					case "ToggleWebcam":
+						ToggleWebcam();
+						break;
+					case "FollowerList":
+						GotFollowerList(evt.followers);
+						break;
+					case "ChangeScene":
+						switch (evt.data) {
+							case "AFK":
+								GoAFK();
+								break;
+							case "Booth":
+								GoBooth();
+								break;
+							case "Game":
+								GoGame();
+								break;
+						}
+						break;
+					case "UpdateAFK":
+						SetAFKMessage(evt.data);
+						break;
+				}
+			});
+			webSocket.addEventListener("close", event => {
+				//Connection died... Re-open it.
+				webSocket = createWebSocket();
+			});
+			return webSocket;
+		}
+
+		var ws = createWebSocket();
 
 		var webcam = new DisplayWebcam(document.getElementById("webcam"));
 

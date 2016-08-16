@@ -57,9 +57,24 @@ var wsServer = new WebSocketServer({
 var ControlConn = new ControlConnection(wsServer);
 
 ControlConn.on("ReceivedJSON", message => {
-	OverlayConn.send(message);
-	if (message.type == "ChatInput") {
-		TwitchConn.sendChat(message.value);
+	switch (message.type) {
+		case "ChangeScene":
+		case "UpdateAFK":
+			OverlayConn.sendOne(message);
+			break;
+		case "NewFollower":
+		case "NewTip":
+		case "ToggleWebcam":
+			OverlayConn.sendOnce(message);
+			break;
+		case "ChatInput":
+			TwitchConn.sendChat(message.value);
+			break;
+		case "UpdateTwitch":
+			TwitchConn.setStreamDetails(message.game, message.title);
+			break;
+		default:
+			OverlayConn.send(message);
 	}
 });
 
@@ -100,11 +115,31 @@ TwitchConn.on("ChatAction", (userstate, message, self) => {
 TwitchConn.on("ChatWhisper", (from, userstate, message, self) => {
 	ControlConn.send({ type: "ChatWhisper", from: from, userstate: userstate, message: message, self: self });
 });
+TwitchConn.on("ChatTimeout", (username, reason, duration) => {
+	OverlayConn.send({ type: "ChatTimeout", username: username, reason: reason, duration: duration });
+	ControlConn.send({ type: "ChatTimeout", username: username, reason: reason, duration: duration });
+	OverlayConn.removeByCallback(item => {
+		if (item.userstate && item.userstate.username && item.userstate.username == username) return true;
+		if (item.username && item.username == username) return true;
+		if (item.follower && item.follower == username) return true;
+		return false;
+	});
+	ControlConn.removeByCallback(item => {
+		if (item.userstate && item.userstate.username && item.userstate.username == username) return true;
+		if (item.username && item.username == username) return true;
+		if (item.follower && item.follower == username) return true;
+		return false;
+	});
+});
+
 TwitchConn.on("FollowersPopulated", followers => {
 	ControlConn.sendOne({ type: "FollowerList", followers: followers });
 	OverlayConn.sendOne({ type: "FollowerList", followers: followers });
 });
-
+TwitchConn.on("StreamDetailsUpdated", () => {
+	ControlConn.sendOne({ type: "TwitchDetails", game: TwitchConn.game, title: TwitchConn.title });
+	OverlayConn.sendOne({ type: "TwitchDetails", game: TwitchConn.game, title: TwitchConn.title });
+});
 var StreamTipConn = new StreamTipConnector();
 StreamTipConn.on("Status", state => {
 	ControlConn.sendOne({ type: "Status(StreamTip)", status: state });

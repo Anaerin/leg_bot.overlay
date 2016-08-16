@@ -1,4 +1,5 @@
-﻿function htmlEscape(str) {
+﻿var isAdminPage = false;
+function htmlEscape(str) {
 	return String(str)
 		.replace(/&/g, '&amp;')
 		.replace(/"/g, '&quot;')
@@ -6,37 +7,50 @@
 		.replace(/</g, '&lt;')
 		.replace(/>/g, '&gt;');
 }
-function formatUser(userState) {
-	var output = "<div class=\"UserName Turbo ";
-	if (userState.badges) {
-		if (userState.badges.broadcaster == 1) output += "Broadcaster ";
-		if (userState.badges.moderator == 1) output += "Moderator ";
-		if (userState.badges.turbo == 1) output += "Turbo ";
-		if (userState.badges.subscriber == 1) output += "Subscriber ";
+function formatUser(userState, bAction) {
+	if (bAction) {
+		var userDiv = document.createElement("span");
+	} else {
+		var userDiv = document.createElement("div");
 	}
-	output += "\"";
-	if (userState.color) output += " style=\" color:" + userState.color + ";\"";
-	output += ">" + userState['display-name'] + "</div > ";
-	return output;
+	userDiv.classList.add("UserName");
+	if (userState.badges) {
+		if (userState.badges.broadcaster == 1) userDiv.classList.add("Broadcaster");
+		if (userState.badges.moderator == 1) userDiv.classList.add("Moderator");
+		if (userState.badges.turbo == 1) userDiv.classList.add("Turbo");
+		if (userState.badges.subscriber == 1) userDiv.classList.add("Subscriber");
+	}
+	if (userState.color) userDiv.style.color = userState.color;
+	userDiv.innerHTML = userState['display-name'];
+	return userDiv;
 }
+
 function formatChatMessage(message) {
 	var newDiv = document.createElement("div");
+	var range = document.createRange();
 	newDiv.className = "ChatLine";
-	newDiv.innerHTML = formatUser(message.userstate) + formatEmotes(message.message, message.userstate.emotes);
+	newDiv.appendChild(formatUser(message.userstate));
+	newDiv.appendChild(range.createContextualFragment(formatEmotes(message.message, message.userstate.emotes)));
 	return newDiv;
 }
 
 function formatWhisperMessage(message) {
 	var newDiv = document.createElement("div");
+	var range = document.createRange();
 	newDiv.className = "WhisperLine";
-	newDiv.innerHTML = formatUser(message.userstate) + formatEmotes(message.message, message.userstate.emotes);
+	newDiv.appendChild(formatUser(message.userstate));
+	newDiv.appendChild(range.createContextualFragment(formatEmotes(message.message, message.userstate.emotes)));
 	return newDiv;
 }
 
 function formatActionMessage(message) {
 	var newDiv = document.createElement("div");
+	var range = document.createRange();
 	newDiv.className = "ActionLine";
-	newDiv.innerHTML = formatUser(message.userstate) + formatEmotes(message.message, message.userstate.emotes);
+	newDiv.appendChild(range.createContextualFragment("<div class=\"UserName\">*</div>"));
+	newDiv.appendChild(formatUser(message.userstate, true));
+	newDiv.appendChild(range.createContextualFragment(formatEmotes(message.message, message.userstate.emotes)));
+	newDiv.username = message.userstate.username;
 	return newDiv;
 }
 

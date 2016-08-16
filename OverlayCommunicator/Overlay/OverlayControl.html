@@ -105,39 +105,6 @@
 			.DebugScroll div {
 
 			}
-			.rightside #MessageLog .ChatLine:nth-child(1), .rightside #MessageLog .WhisperLine:nth-child(1) {
-				opacity: 1;
-			}
-			.rightside #MessageLog .ChatLine:nth-child(2), .rightside #MessageLog .WhisperLine:nth-child(2)  {
-				opacity: 0.9;
-			}
-			.rightside #MessageLog .ChatLine:nth-child(3), .rightside #MessageLog .WhisperLine:nth-child(3)  {
-				opacity: 0.8;
-			}
-			.rightside #MessageLog .ChatLine:nth-child(4), .rightside #MessageLog .WhisperLine:nth-child(4)  {
-				opacity: 0.7;
-			}
-			.rightside #MessageLog .ChatLine:nth-child(5), .rightside #MessageLog .WhisperLine:nth-child(5)  {
-				opacity: 0.6;
-			}
-			.rightside #MessageLog .ChatLine:nth-child(6), .rightside #MessageLog .WhisperLine:nth-child(6)  {
-				opacity: 0.5;
-			}
-			.rightside #MessageLog .ChatLine:nth-child(7), .rightside #MessageLog .WhisperLine:nth-child(7)  {
-				opacity: 0.4;
-			}
-			.rightside #MessageLog .ChatLine:nth-child(8), .rightside #MessageLog .WhisperLine:nth-child(8)  {
-				opacity: 0.3;
-			}
-			.rightside #MessageLog .ChatLine:nth-child(9), .rightside #MessageLog .WhisperLine:nth-child(9)  {
-				opacity: 0.2;
-			}
-			.rightside #MessageLog .ChatLine:nth-child(10), .rightside #MessageLog .WhisperLine:nth-child(10)  {
-				opacity: 0.1;
-			}
-			.rightside #MessageLog .ChatLine:nth-child(1n+11), .rightside #MessageLog .WhisperLine:nth-child(1n+11)  {
-				opacity: 0;
-			}
 	</style>
 	<script language="JavaScript" type="text/javascript" src="js/ChatProcessor.js"></script>
 </head>
@@ -169,6 +136,7 @@
 			<button id="ToggleWebcam">Toggle Webcam</button>
 		</fieldset>
 		<input type="text" name="AFKComment" id="AFKComment" placeholder="AFK Message" /><button id="UpdateAFK">Update AFK Message</button><br />
+		<input type="text" name="TwitchGame" id="TwitchGame" placeholder="Twitch Game Name"/><input type="text" name="TwitchTitle" id="TwitchTitle" placeholder="Stream Title"/><button id="UpdateTwitch">Update Twitch</button><br />
 		<input type="text" name="FollowerName" id="FollowerName" placeholder="Follower Name" /><button id="TestFollow">Test New Follower</button><br />
 		<input type="text" name="DonationName" id="DonationName" placeholder="Donator" /><input type="text" name="DonationCurrencySymbol" id="DonationCurrencySymbol" placeholder="$" /><input type="text" name="DonationAmount" id="DonationAmount" placeholder="0.00" /><button id="TestDonation">Test New Donation</button><br />
 		<input type="text" name="CounterName" id="CounterName" placeholder="Counter Name"/><input type="text" name="CounterValue" id="CounterValue" placeholder="5" /><button id="TestCounter">Test Counter Update</button>
@@ -219,20 +187,34 @@
 					// Not JSON, we don't care;
 					return;
 				}
-				if (messageObj.type == "Status(Twitch)") document.getElementById("TwitchStatus").innerHTML = messageObj.status;
-				if (messageObj.type == "Status(StreamTip)") document.getElementById("StreamTipStatus").innerHTML = messageObj.status;
-				if (messageObj.type == "Status(LegBot)") document.getElementById("LegBotStatus").innerHTML = messageObj.status;
-				if (messageObj.type == "NeedAuth") {
-					//window.alert('Taking you to: ' + messageObj.value);
-					window.location.href = messageObj.value;
+				switch (messageObj.type) {
+					case "Status(Twitch)":
+						document.getElementById("TwitchStatus").innerHTML = messageObj.status;
+						break;
+					case "Status(StreamTip)":
+						document.getElementById("StreamTipStatus").innerHTML = messageObj.status;
+						break;
+					case "Status(LegBot)":
+						document.getElementById("LegBotStatus").innerHTML = messageObj.status;
+						break;
+					case "NeedAuth":
+						window.location.href = messageObj.value;
+						break;
+					case "ChatMessage":
+						appendChatMessage(messageObj, false, formatChatMessage);
+						break;
+					case "ChatAction":
+						appendChatMessage(messageObj, false, formatActionMessage);
+						break;
+					case "ChatWhisper":
+						document.getElementById("MessageLog").insertBefore(formatWhisperMessage(messageObj), document.getElementById("MessageLog").firstChild);
+						break;
+					case "TwitchDetails":
+						document.getElementById("TwitchGame").value = messageObj.game;
+						document.getElementById("TwitchTitle").value = messageObj.title;
+						break;
 				}
-				if (messageObj.type == "ChatMessage") {
-					appendChatMessage(messageObj);
-				}
-				if (messageObj.type == "ChatWhisper") {
-					document.getElementById("MessageLog").insertBefore(formatWhisperMessage(messageObj), document.getElementById("MessageLog").firstChild);
-				}
-				if (document.getElementById("MessageLog").lastChild) document.getElementById("MessageLog").lastChild.scrollIntoView();
+				//if (document.getElementById("MessageLog").lastChild) document.getElementById("MessageLog").lastChild.scrollIntoView();
 			};
 
 			// Display any errors that occur
@@ -272,30 +254,20 @@
 
 			// Send events.
 			var buttonEvents = {
-				"GetWebcams": function (event) {
-					var webcamList = document.getElementById("WebcamList");
-					while (webcamList.firstChild) {
-						webcamList.removeChild(webcamList.firstChild);
-					}
-					socket.send(JSON.stringify({ type: "GetWebcams", data: "" }));
-				},
-				"SetWebcam": function (event) {
-					socket.send(JSON.stringify({ type: "SetWebcam", data: document.getElementById("WebcamList").value }));
-				},
 				"ToggleWebcam": function (event) {
 					socket.send(JSON.stringify({ type: "ToggleWebcam", data: "" }));
 				},
 				"SwitchToAFK": function (event) {
-					socket.send(JSON.stringify({ type: "SwitchToAFK", data: "" }));
+					socket.send(JSON.stringify({ type: "ChangeScene", data: "AFK" }));
 				},
 				"SwitchToGame": function (event) {
-					socket.send(JSON.stringify({ type: "SwitchToGame", data: "" }));
+					socket.send(JSON.stringify({ type: "ChangeScene", data: "Game" }));
 				},
 				"SwitchToBooth": function (event) {
-					socket.send(JSON.stringify({ type: "SwitchToBooth", data: "" }));
+					socket.send(JSON.stringify({ type: "ChangeScene", data: "Booth" }));
 				},
 				"TestFollow": function (event) {
-					socket.send(JSON.stringify({ type: "TestFollow", data: { username: document.getElementById("FollowerName").value } }));
+					socket.send(JSON.stringify({ type: "NewFollower", value: document.getElementById("FollowerName").value }));
 				},
 				"TestDonation": function (event) {
 					var Name = document.getElementById("DonationName").value;
@@ -303,20 +275,24 @@
 					if (Symbol == "") Symbol = "$";
 					var Amount = document.getElementById("DonationAmount").value;
 					Amount = Number(Amount).toFixed(2);
-					socket.send(JSON.stringify({ type: "TestDonation", data: { username: Name, currencySymbol: Symbol, amount: Amount } }));
-				},
-				"UpdateComment": function (event) {
-					socket.send(JSON.stringify({ type: "UpdateComment", data: document.getElementById("GameComment").value }));
+					socket.send(JSON.stringify({ type: "NewTip", tip: { username: Name, currencySymbol: Symbol, amount: Amount, user: { displayName: Name } } }));
 				},
 				"UpdateAFK": function (event) {
 					socket.send(JSON.stringify({ type: "UpdateAFK", data: document.getElementById("AFKComment").value }));
 				},
 				"TestCounter": function (event) {
 					socket.send(JSON.stringify({ type: "TestStat", data: { action: "StatChanged", stat: document.getElementById("CounterName").value, value: document.getElementById("CounterValue").value } }));
+				},
+				"UpdateTwitch": function (event) {
+					socket.send(JSON.stringify({ type: "UpdateTwitch", game: document.getElementById("TwitchGame").value, title: document.getElementById("TwitchTitle").value }));
 				}
 			}
 			Object.keys(buttonEvents).forEach(function (button) {
-				document.getElementById(button).addEventListener("click", buttonEvents[button]);
+				if (document.getElementById(button)) {
+					document.getElementById(button).addEventListener("click", buttonEvents[button]);
+				} else {
+					console.log("Can't find button %s", button);
+				}
 			});
 		});
 
