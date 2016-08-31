@@ -6,7 +6,7 @@ const EventEmitter = require("events").EventEmitter,
 const Request = require("request"); // Temporary, to work around a bug in tmi.js
 const oAuth = require("./oAuthHandler.js");
 const TwitchSecrets = require("../secrets.js").Twitch;
-
+var log = require("./ConsoleLogging.js").log;
 module.exports = class TwitchConnector extends EventEmitter {
 	constructor(streamer) {
 		super();
@@ -15,8 +15,10 @@ module.exports = class TwitchConnector extends EventEmitter {
 		this.followerCount = 0;
 		this.game = "";
 		this.title = "";
+		this.status = "Disconnected";
 		this.oAuth = new oAuth(TwitchSecrets.clientID, TwitchSecrets.clientSecret, "https://api.twitch.tv/kraken/oauth2/token");
 		this.oAuth.on("NeedAuth", () => {
+			this.status = "Need Auth";
 			this.emit("Status", "Need Auth");
 			this.emit("NeedAuth", "https://api.twitch.tv/kraken/oauth2/authorize" +
 				"?response_type=" + "code" +
@@ -26,12 +28,14 @@ module.exports = class TwitchConnector extends EventEmitter {
 					"channel_editor",
 					"channel_commercial",
 					"channel_subscriptions",
-					"chat_login"
+					"chat_login",
+					"user_read"
 				].join(" ") +
 				"&state=" + "Twitch");
 		});
 		this.oAuth.on("AuthComplete", () => {
 			this.emit("AuthComplete");
+			this.status = "Auth Complete";
 			this.emit("Status", "Auth Complete");
 			if (!this.tmi) {
 				this.connect();
@@ -47,7 +51,7 @@ module.exports = class TwitchConnector extends EventEmitter {
 				this.processChannelUpdate(body);
 			});
 		} else {
-			console.log("Got setStreamDetails call with no details... Bug?");
+			log.warn("Got setStreamDetails call with no details... Bug?");
 		}
 	}
 	processChannelUpdate(updateObj) {
@@ -101,7 +105,7 @@ module.exports = class TwitchConnector extends EventEmitter {
 					this.followers.push(follower.user.display_name.toString());
 				});
 			} else {
-				console.log("TwitchConnector: Got no body or follows. Error reads %s", err);
+				log.error("TwitchConnector: Got no body or follows. Error reads %s", err);
 			}
 		});
 	}
@@ -137,7 +141,7 @@ module.exports = class TwitchConnector extends EventEmitter {
 					channels: [this.streamer]
 				});
 				this.tmi.on("chat", (channel, userstate, message, self) => {
-					//console.log("DEBUG: TwitchConnector: Message received: %s", message);
+					log.debug("DEBUG: TwitchConnector: Message received: %s", message);
 					this.emit("ChatMessage", userstate, message, self);
 				});
 				this.tmi.on("whisper", (from, userstate, message, self) => {
@@ -162,24 +166,28 @@ module.exports = class TwitchConnector extends EventEmitter {
 					this.emit("ChatTimeout", username, reason, duration );
 				});
 				this.tmi.on("disconnected", reason => {
+					this.status = "Reconnecting";
 					this.emit("Status", "Reconnecting");
-					console.log("TwitchConnector: Disconnected - %s", reason);
+					log.debug("TwitchConnector: Disconnected - %s", reason);
 				});
 				this.tmi.on("connecting", (address, port) => {
+					this.status = "Connecting";
 					this.emit("Status", "Connecting");
-					console.log("TwitchConnector: Connecting to %s:%s", address, port);
+					log.debug("TwitchConnector: Connecting to %s:%s", address, port);
 				});
 				this.tmi.on("connected", (address, port) => {
+					this.status = "Connected";
 					this.emit("Status", "Connected");
-					console.log("TwitchConnector: Connected to %s:%s", address, port);
+					log.debug("TwitchConnector: Connected to %s:%s", address, port);
 				});
 				this.tmi.on("error", error => {
+					this.status = "Error";
 					this.emit("Status", "Error");
-					console.log("TwitchConnector: Error: %s", error);
+					log.error("TwitchConnector: Error: %s", error);
 				});
 				this.tmi.on("roomstate", (channel, state) => {
 					this.getStreamDetails();
-					console.log("Got ROOMSTATE, updating twitch details.");
+					log.info("Got ROOMSTATE, updating twitch details.");
 				});
 				this.tmi.connect();
 				this.getFollowers();

@@ -66,9 +66,11 @@
 			transform: scaleY(-1);
 		}
 		fieldset fieldset {
-			width: 30%;
 			float: left;
 		}
+        fieldset hr {
+            clear: left;
+        }
 		.rightside #ChatInput {
 				position: absolute;
 				bottom: 0px;
@@ -127,6 +129,15 @@
 				<legend>Leg_Bot</legend>
 				<span id="LegBotStatus"></span>
 			</fieldset>
+            <hr />
+            <fieldset>
+                <legend>Overlay</legend>
+                <span id="OverlayConnections">0</span>
+            </fieldset>
+            <fieldset>
+                <legend>Control</legend>
+                <span id="ControlConnections">0</span>
+            </fieldset>
 		</fieldset>
 		<fieldset>
 			<legend>Switch Screens</legend>
@@ -196,7 +207,13 @@
 						break;
 					case "Status(LegBot)":
 						document.getElementById("LegBotStatus").innerHTML = messageObj.status;
-						break;
+                        break;
+                    case "ControlConnections":
+                        document.getElementById("ControlConnections").innerHTML = messageObj.count;
+                        break;
+                    case "OverlayConnections":
+                        document.getElementById("OverlayConnections").innerHTML = messageObj.count;
+                        break;
 					case "NeedAuth":
 						window.location.href = messageObj.value;
 						break;

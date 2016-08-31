@@ -2,12 +2,13 @@
 const EventEmitter = require("events").EventEmitter;
 const Connector = require("./WebsocketListener.js");
 const BufferLength = 100;
-
+var log = require("./ConsoleLogging.js").log;
 module.exports = class OverlayConnection extends EventEmitter {
 	constructor(Server) {
         super();
         // Make yourself a Connection object and get it set up.
 		this.connection = new Connector(Server, "Overlay");
+		this.connections = 0;
 		this.replayBuffer = [];
 		// Wire up an event handler to the "Replay" event, so we can
 		// Replay messages that are in our buffer to try and maintain state.
@@ -18,6 +19,10 @@ module.exports = class OverlayConnection extends EventEmitter {
         });
         this.connection.on("ReceivedJSON", message => {
             this.emit("ReceivedJSON", message);
+        });
+        this.connection.on("OpenConnections", connections => {
+			this.connections = connections;
+            this.emit("OpenConnections", connections);
         });
 	}
 	removeByType(type) {

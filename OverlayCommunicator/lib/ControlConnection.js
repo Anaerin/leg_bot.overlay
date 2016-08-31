@@ -1,6 +1,7 @@
 ﻿"use strict";
 const EventEmitter = require("events").EventEmitter;
 const Connector = require("./WebsocketListener.js");
+const log = require("./ConsoleLogging.js").log;
 const BufferLength = 100;
 
 module.exports = class ControlConnection extends EventEmitter {
@@ -10,6 +11,7 @@ module.exports = class ControlConnection extends EventEmitter {
 		this.connection = new Connector(Server, "Control");
 		this.replayBuffer = [];
 		this.AuthNeeded = [];
+		this.connections = 0;
 		// Wire up an event handler to the "Replay" event, so we can
 		// Replay messages that are in our buffer to try and maintain state.
 		this.connection.on("Replay", (conn) => {
@@ -20,7 +22,11 @@ module.exports = class ControlConnection extends EventEmitter {
 		});
 		this.connection.on("ReceivedJSON", message => {
 			this.emit("ReceivedJSON", message);
-		});
+        });
+        this.connection.on("OpenConnections", connections => {
+			this.connections = connections;
+            this.emit("OpenConnections", connections);
+        });
 		this.getAuthRequest();
 	}
 	removeByType(type) {
@@ -40,10 +46,8 @@ module.exports = class ControlConnection extends EventEmitter {
 	}
 	sendAuthRequest(data) {
 		this.AuthNeeded.push(data);
-		//console.log("Added Auth Needed");
 	}
 	getAuthRequest() {
-		//console.log("Got Auth Request");
 		if (this.AuthNeeded.length > 0) {
 			this.connection.send(this.AuthNeeded[0]);
 		}

@@ -2,6 +2,7 @@
 const EventEmitter = require("events").EventEmitter,
 	WebSocket = require("websocket").client,
 	HTTP = require("http");
+const log = require("./ConsoleLogging.js").log;
 
 module.exports = class LegBotConnector extends EventEmitter {
 	constructor(streamer) {
@@ -11,28 +12,33 @@ module.exports = class LegBotConnector extends EventEmitter {
 		this.websocket = new WebSocket();
 		this.stats = {};
 		this.game = {};
+		this.status = "Disconnected";
 		this.emit("Status", "Disconnected");
 		this.websocket.on("connect", (connection) => {
+			this.status = "Connected";
 			this.emit("Status", "Connected");
 			connection.on("message", message => {
 				if (message.type == "utf8") {
 					this.messageReceived(JSON.parse(message.utf8Data));
 				} else {
-					console.log("LegBotConnector: Received unknown datatype (%s)", message.type);
+					log.warn("LegBotConnector: Received unknown datatype (%s)", message.type);
 				}
 			});
 			connection.on("close", () => {
+				this.status = "Reconnecting";
 				this.emit("Status", "Reconnecting");
 				this.connect();
 			});
 			connection.on("error", err => {
+				this.status = "Error";
 				this.emit("Status", "Error: " + err.toString());
 				this.connect();
 			});
 		});
 		this.websocket.on("connectFailed", (errorDescription) => {
+			this.status = "Error";
 			this.emit("Status", "Error");
-			console.log("LegBotConnector: Websocket ConnectFailed - %s", errorDescription);
+			log.warn("LegBotConnector: Websocket ConnectFailed - %s", errorDescription);
 		});
 		this.fetchValues();
 	}
@@ -63,6 +69,7 @@ module.exports = class LegBotConnector extends EventEmitter {
 		});
 	}
 	connect() {
+		this.status = "Connecting";
 		this.emit("Status", "Connecting");
 		this.websocket.connect(this.wsPath);
 	}

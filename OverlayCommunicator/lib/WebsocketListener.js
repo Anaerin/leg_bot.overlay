@@ -1,6 +1,8 @@
 ﻿"use strict";
 const EventEmitter = require("events").EventEmitter;
 
+var log = require("./ConsoleLogging.js").log;
+
 // Make us a controller for all the websockets we're going to be getting.
 module.exports = class WebsocketListener extends EventEmitter {
 	constructor(Server, ConnectionType) {
@@ -54,21 +56,23 @@ module.exports = class WebsocketListener extends EventEmitter {
 						}
 					} else {
 						// We shouldn't get here, as we're using JSON for everything. So error.
-						console.log("WSController(%s): Received websocket message with binary type!", this.parent.Type);
+						log.error("WSController(%s): Received websocket message with binary type!", this.parent.Type);
 					}
 				});
 
 				// When the connection closes, clean up after ourselves.
 				connection.on("close", function (reasonCode, description) {
-					console.log("WSController(%s): Connection Closed (%s): %s", this.parent.Type, reasonCode, description);
-					this.parent.Connections.splice(this.parent.Connections.indexOf(this), 1);
+					log.debug("WSController(%s): Connection Closed (%s): %s", this.parent.Type, reasonCode, description);
+                    this.parent.Connections.splice(this.parent.Connections.indexOf(this), 1);
+                    this.parent.emit("OpenConnections", this.parent.Connections.length);
 				});
 
 				// Add this connection to our collection, for later correction.
 				this.Connections.push(connection);
 
 				// Ask anyone who is connected to replay events to this connection.
-				this.emit("Replay", connection);
+                this.emit("Replay", connection);
+                this.emit("OpenConnections", this.Connections.length);
 			} else {
 
 				//Nope, we don't care about this. Bail out as fast as possible.

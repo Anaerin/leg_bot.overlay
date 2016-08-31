@@ -6,6 +6,7 @@ var TwitchConnector = require("./lib/TwitchConnector.js");
 var StreamTipConnector = require("./lib/StreamTipConnector.js");
 var ServeStatic = require("./lib/ServeStatic.js");
 var Streamer = require("./secrets.js").Streamer;
+var log = require("./lib/ConsoleLogging.js");
 
 var WebSocketServer = require('websocket').server,
 	http = require('http'),
@@ -26,7 +27,7 @@ var server = http.createServer(function (request, response) {
 				StreamTipConn.receivedCode(uri.query["code"]);
 				break;
 			default:
-				console.log("Got code for unknown service (%s)", uri.query["state"]);
+				log.log.warn("Got code for unknown service (%s)", uri.query["state"]);
 		}
 		ControlConn.getNextAuthRequest();
 		response.writeHead(302, "Moved temporarily", { location: "/OverlayControl.html" });
@@ -42,11 +43,11 @@ function SendAuthCodes(code) {
 }
 
 server.listen(8000, function () {
-	console.log((new Date()) + ' Server is listening on port 8000');
+	log.log.info((new Date()) + ' Server is listening on port 8000');
 });
 
 server.on("error", err => {
-	console.log("Server error: %s", err);
+	log.log.error("Server error: %s", err);
 });
 
 var wsServer = new WebSocketServer({
@@ -83,6 +84,7 @@ var OverlayConn = new OverlayConnection(wsServer);
 var TwitchConn = new TwitchConnector(Streamer);
 TwitchConn.on("Status", state => {
 	ControlConn.sendOne({ type: "Status(Twitch)", status: state });
+	updateStatus();
 });
 TwitchConn.on("NeedAuth", authURL => {
 	ControlConn.sendAuthRequest({ type: "NeedAuth", value: authURL });
@@ -91,7 +93,6 @@ TwitchConn.on("ChatMessage", (userstate, message, self) => {
 	OverlayConn.send({ type: "ChatMessage", userstate: userstate, message: message, self: self });
 	ControlConn.send({ type: "ChatMessage", userstate: userstate, message: message, self: self });
 });
-TwitchConn.connect();
 TwitchConn.on("NewFollower", follower => {
 	OverlayConn.send({ type: "NewFollower", value: follower });
 	ControlConn.send({ type: "NewFollower", value: follower });
@@ -143,6 +144,7 @@ TwitchConn.on("StreamDetailsUpdated", () => {
 var StreamTipConn = new StreamTipConnector();
 StreamTipConn.on("Status", state => {
 	ControlConn.sendOne({ type: "Status(StreamTip)", status: state });
+	updateStatus();
 });
 StreamTipConn.on("NeedAuth", authURL => {
 	ControlConn.sendAuthRequest({ type: "NeedAuth", value: authURL });
@@ -155,12 +157,13 @@ StreamTipConn.on("GoalUpdated", () => {
 	ControlConn.send({ type: "GoalUpdated", goal: StreamTipConn.goal });
 	OverlayConn.send({ type: "GoalUpdated", goal: StreamTipConn.goal });
 });
-StreamTipConn.connect();
+
 
 var LegBotConn = new LegBotConnector(Streamer);
 // open("http://localhost:8000/OverlayControl.html");
 LegBotConn.on("Status", state => {
 	ControlConn.sendOne({ type: "Status(LegBot)", status: state });
+	updateStatus();
 });
 LegBotConn.on("GameChanged", game => {
 	ControlConn.sendOne({ type: "GameChanged", value: game });
@@ -170,4 +173,30 @@ LegBotConn.on("StatChanged", (stat, value) => {
 	ControlConn.sendByFunc({ type: "StatChanged", stat: stat, value: value }, test => test.stat == stat);
 	OverlayConn.sendByFunc({ type: "StatChanged", stat: stat, value: value }, test => test.stat == stat);
 });
+
+
+ControlConn.on("OpenConnections", count => {
+    ControlConn.sendOne({ type: "ControlConnections", count: count });
+    OverlayConn.sendOne({ type: "ControlConnections", count: count });
+	updateStatus();
+});
+OverlayConn.on("OpenConnections", count => {
+    ControlConn.sendOne({ type: "OverlayConnections", count: count });
+    OverlayConn.sendOne({ type: "OverlayConnections", count: count });
+	updateStatus();
+});
+
+function updateStatus() {
+	var output = [
+		"{bold}Twitch{/bold}: " + TwitchConn.status,
+		"{bold}Leg_Bot{/bold}: " + LegBotConn.status,
+		"{bold}StreamTip{/bold}: " + StreamTipConn.status,
+		"{bold}Overlays{/bold}: " + OverlayConn.connections,
+		"{bold}Controls{/bold}: " + ControlConn.connections
+	]
+	log.updateStatus(output);
+}
+
+StreamTipConn.connect();
+TwitchConn.connect();
 LegBotConn.connect();
