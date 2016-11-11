@@ -24,7 +24,7 @@ body {
 	-moz-background-clip: text;
 	-webkit-background-clip: text;
 	color: transparent;
-	background-size: 1000% 1000%;
+	background-size: 500% 500%;
 	-webkit-animation: RollingGradient 30s ease infinite;
 	-moz-animation: RollingGradient 30s ease infinite;
 	animation: RollingGradient 30s ease infinite;
@@ -37,7 +37,7 @@ body {
 	position: absolute;
 	top: -1px;
 	left: -1px;
-	content: 'Anaerin';
+	content: attr(streamer-name);
 	text-shadow: 1px 1px 0 #bbb, 2px 2px 0 #bbb, 3px 3px 0 #bbb, 4px 4px 0 #bbb, 5px 5px 0 #bbb; /*, 6px 6px 0 gray, 7px 7px 0 gray, 8px 8px 0 gray, 9px 9px 0 gray; */
 	color: white;
 	z-index: -100;

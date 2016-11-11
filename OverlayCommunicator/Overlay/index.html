@@ -12,15 +12,12 @@
 <body>
 	<div class="MainWindow"></div>
 	<div class="LeftHolder"></div>
-	<div class="Logo">A</div>
+	<div class="Logo" id="LogoHolder"></div>
 	<div class="AFKWindow Hidden" id="afkWindow"><div class="AFKImage" id="AFKMessage"></div></div>
 	<div class="InfoLine">Currently Playing: <span id="Game"></span></div>
 	<div class="ProgressLine"><progress id="progressBar"></progress><label for="progressBar" id="progressLabel"></label></div>
 	<fieldset class="EmptyFieldset Donators"><legend>Donations</legend><marquee id="donatorList"></marquee></fieldset>
-	<div class="CounterHolder">
-		<fieldset class="Hidden Counter"><legend>Bad Puns</legend><counter data-name="badpun" id="badpun">0</counter></fieldset>
-		<fieldset class="Hidden Counter"><legend>Deaths</legend><counter data-name="death" id="death">0</counter></fieldset>
-	</div>
+	<div class="CounterHolder" id="Counters"></div>
 	<div class="PopupHolder">
 		<fieldset class="Follower"><legend>Follows</legend><span id="FollowerAlert"></span><span id="FollowerCount">0</span></fieldset>
 	</div>
@@ -54,8 +51,15 @@
 		var queueTimeout;
 		var processingQueue = false;
 		var followers = [];
-		function UpdateGame(gameName) {
+		function UpdateGame(gameName, stats) {
 			document.getElementById("Game").innerHTML = gameName;
+			for (var stat in stats) {
+				if (!document.getElementById(stat)) {
+					createCounter(stat, stats[stat]);
+				} else {
+					document.getElementById(stat).innerHTML = stats[stat];
+				}
+			}
 		}
 
 		function PullQueue() {
@@ -84,11 +88,31 @@
 
 		function UpdateCounter(counter, value) {
 			var counterID = document.getElementById(counter);
-			counterID.innerHTML = value;
-			counterID.classList.add("updated");
-			counterID.timeout = setTimeout(function (counterID) {
-				counterID.classList.remove("updated");
-			}, 7000, counterID);
+			if (counterID) {
+				counterID.innerHTML = value;
+				counterID.classList.add("updated");
+				counterID.timeout = setTimeout(function (counterID) {
+					counterID.classList.remove("updated");
+				}, 7000, counterID);
+			} else {
+				createCounter(counter, value)
+			}
+		}
+
+		function createCounter(counter, value) {
+			//<fieldset class="Hidden Counter"><legend>Bad Puns</legend><counter data-name="badpun" id="badpun">0</counter></fieldset>
+			var fieldset = document.createElement("fieldset");
+			fieldset.classList.add("Counter");
+			fieldset.classList.add("Hidden");
+			var legend = document.createElement("legend");
+			legend.appendChild(document.createTextNode(counter));
+			fieldset.appendChild(legend);
+			var counterElem = document.createElement("counter");
+			counterElem.id = counter;
+			counterElem.appendChild(document.createTextNode(value));
+			counterElem.className = "";
+			fieldset.appendChild(counterElem);
+			document.getElementById("Counters").appendChild(fieldset);
 		}
 
 		function NewFollower(followerName) {
@@ -151,14 +175,19 @@
 			document.getElementById("FollowerCount").innerHTML = followers.length;
 		}
 
+		function SetStreamerName(streamer) {
+			document.getElementById("LogoHolder").innerHTML = String(streamer).substr(0, 1);
+			document.getElementById("LogoHolder").setAttribute("streamer-name",streamer);
+		}
+
 
 		//Set up framework objects.
 		function createWebSocket() {
 			webSocket = new WebSocket("ws://localhost:8000", "overlay");
 			webSocket.addEventListener("message", function (event) {
 				var evt = event.data;
-				if (typeof evt === "string") evt = JSON.parse(evt);
 				console.log("Message Received: %s", event.data);
+				if (typeof evt === "string") evt = JSON.parse(evt);
 				switch (evt.type) {
 					case "ChatMessage":
 						ChatMessage("Chat", evt);
@@ -170,10 +199,10 @@
 						ChatTimeout(evt);
 						break;
 					case "StatChanged":
-						AddToQueue({ callback: UpdateCounter, arguments: [evt.stat, evt.counter], timeout: 10000 });
+						AddToQueue({ callback: UpdateCounter, arguments: [evt.stat, evt.value], timeout: 10000 });
 						break;
 					case "GameChanged":
-						UpdateGame(evt.value);
+						UpdateGame( evt.value, evt.stat );
 						break;
 					case "NewFollower":
 						AddToQueue({ callback: NewFollower, arguments: [evt.value], timeout: 10000 });
@@ -205,6 +234,9 @@
 						break;
 					case "UpdateAFK":
 						SetAFKMessage(evt.data);
+						break;
+					case "StreamerName":
+						SetStreamerName(evt.name);
 						break;
 				}
 			});

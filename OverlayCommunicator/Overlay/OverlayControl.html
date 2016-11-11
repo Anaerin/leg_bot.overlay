@@ -157,7 +157,8 @@
 	<script language="JavaScript" type="text/javascript">
 		"use strict";
 		// Initialize everything when the window finishes loading
-		var socket;
+        isAdminPage = true;
+        var socket;
 		function sendChat(text) {
 			if (socket) {
 				socket.send(JSON.stringify({ type: "ChatInput", value: text }));

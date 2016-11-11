@@ -1,23 +1,23 @@
 {
-  "name": "OverlayCommunicator",
-  "version": "0.0.0",
+  "name": "overlaycommunicator",
+  "version": "0.0.2",
   "description": "OverlayCommunicator",
   "main": "app.js",
+  "private": true,
   "author": {
     "name": "Robert",
-    "email": ""
+    "email": "anaerin@gmail.com"
   },
   "dependencies": {
     "blessed": "^0.1.81",
     "colors": "^1.1.2",
-    "cycle": "^1.0.3",
-    "debug": "^2.2.0",
+    "debug": "^2.3.2",
     "extend": "^3.0.0",
     "open": "0.0.5",
-    "request": "^2.74.0",
-    "tmi.js": "^1.1.1",
+    "request": "^2.78.0",
+    "tmi.js": "^1.1.2",
     "util": "^0.10.3",
-    "websocket": "^1.0.22",
-    "winston": "^2.2.0"
+    "websocket": "^1.0.23",
+    "winston": "^2.3.0"
   }
 }

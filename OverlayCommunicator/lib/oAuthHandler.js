@@ -55,6 +55,7 @@ module.exports = class oAuthHandler extends EventEmitter {
 			'Content-Length': Buffer.byteLength(requestData)
 		};
 		var complete = false;
+		log.debug("oAuth: Posting token");
 		var request = HTTPS(requestOptions, res => {
 			res.setEncoding('utf8');
 			res.on('data', chunk => {
@@ -118,14 +119,16 @@ module.exports = class oAuthHandler extends EventEmitter {
 	}
     set accessToken(value) {
         if (this.waitingForToken) {
-            var tokenGetter = {
+			log.debug("oAuth: We're received a token, and we were waiting for one! Joy!");
+			var tokenGetter = {
                 client_id: this.clientID,
                 client_secret: this.clientSecret,
                 grant_type: "authorization_code",
                 redirect_uri: "http://localhost:8000/code",
                 code: value
             }
-            this.getToken(tokenGetter);
+			log.debug("oAuth: Getting auth code");
+			this.getToken(tokenGetter);
             this.waitingForToken = false;
         }
     }

@@ -65,7 +65,8 @@ module.exports = class ControlConnection extends EventEmitter {
 			// Remove the first (Bufferlength - length) entries, which should reduce it to BufferLength entries.
 			this.replayBuffer.splice(0, BufferLength - len);
 		}
-		this.connection.send(data);
+        //log.debug("Sending", data);
+        this.connection.send(data);
 	}
 	sendOne(data) {
 		// Remove the entries from the list...

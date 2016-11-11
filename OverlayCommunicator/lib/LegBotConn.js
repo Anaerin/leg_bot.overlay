@@ -33,14 +33,14 @@ module.exports = class LegBotConnector extends EventEmitter {
 				this.status = "Error";
 				this.emit("Status", "Error: " + err.toString());
 				this.connect();
-			});
+            });
+            this.fetchValues();
 		});
 		this.websocket.on("connectFailed", (errorDescription) => {
 			this.status = "Error";
 			this.emit("Status", "Error");
 			log.warn("LegBotConnector: Websocket ConnectFailed - %s", errorDescription);
 		});
-		this.fetchValues();
 	}
 	fetchValues() {
 		var request = HTTP.get({
@@ -58,11 +58,10 @@ module.exports = class LegBotConnector extends EventEmitter {
 				} finally {
 					if (result) {
 						this.game = result.game;
-						this.emit("GameChanged", this.game);
 						result.statistics.forEach(stat => {
 							this.stats[stat] = result.counts[stat];
-							this.emit("StatChanged", stat, result.counts[stat]);
-						});
+                        });
+                        this.emit("GameChanged", this.game, this.stats);
 					}
 				}
 			});
@@ -74,17 +73,27 @@ module.exports = class LegBotConnector extends EventEmitter {
 		this.websocket.connect(this.wsPath);
 	}
 	messageReceived(messageJSON) {
-		switch (messageJSON.action) {
+        log.info("Got JSON from Leg_Bot:", messageJSON);
+        switch (messageJSON.action) {
 			case "GameChanged":
-				this.game = messageJSON.game;
-				this.emit("GameChanged", this.game);
+                this.game = messageJSON.game;
+                if (messageJSON.stats) {
+                    this.stats = messageJSON.stats;
+                } else {
+                    for (var stat in this.stats) {
+                        this.stats[stat] = 0;
+                    }
+                }
+				this.emit("GameChanged", this.game, this.stats);
 				break;
 			case "StatChanged":
-				this.stats[messageJSON.stat] = messageJSON.value;
-				this.emit("StatChanged", messageJSON.stat, messageJSON.value);
+                log.info("Got StatChanged from leg_bot");
+                this.stats[messageJSON.stat] = messageJSON.value;
+                this.emit("StatChanged", messageJSON.stat);
 				break;
-			default:
-				this.emit("MessageReceived", messageJSON);
+            default:
+                this.emit("MessageReceived", messageJSON);
+                log.info("LegBotConn: Unknown message received", messageJSON);
 		}
 	}
 

@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<ProfilingTarget xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ProjectTarget>
+    <TargetProject>2eac727a-caf2-4918-a3bd-dab4ece40c4d</TargetProject>
+    <FriendlyName>OverlayCommunicator</FriendlyName>
+  </ProjectTarget>
+</ProfilingTarget>

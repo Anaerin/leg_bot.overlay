@@ -21,7 +21,48 @@ function formatUser(userState, bAction) {
 		if (userState.badges.subscriber == 1) userDiv.classList.add("Subscriber");
 	}
 	if (userState.color) userDiv.style.color = userState.color;
-	userDiv.innerHTML = userState['display-name'];
+    userDiv.innerHTML = userState['display-name'];
+    if (isAdminPage) {
+        var purgeButton = document.createElement("a");
+        purgeButton.innerHTML = "P";
+        purgeButton.className = "UserButton";
+        purgeButton.userName = userState['username'];
+        purgeButton.addEventListener("click", evt => {
+            sendChat(".timeout " + evt.target.userName + " 0");
+            evt.stopPropagation;
+            evt.cancelBubble;
+            evt.returnValue = false;
+            return false;
+        });
+        userDiv.appendChild(purgeButton);
+        var timeoutButton = document.createElement("a");
+        timeoutButton.innerHTML = "T";
+        timeoutButton.className = "UserButton";
+        timeoutButton.userName = userState['username'];
+        timeoutButton.addEventListener("click", evt => {
+            var TOlength = prompt("Timeout Length (seconds)", "0");
+            var TOreason = prompt("Timeout reason");
+            if (TOlength) sendChat(".timeout " + evt.target.userName + " " + TOlength + " " + TOreason);
+            evt.stopPropagation;
+            evt.cancelBubble;
+            evt.returnValue = false;
+            return false;
+        });
+        userDiv.appendChild(timeoutButton);
+        var banHammer = document.createElement("a");
+        banHammer.innerHTML = "B";
+        banHammer.className = "UserButton";
+        banHammer.userName = userState['username'];
+        banHammer.addEventListener("click", evt => {
+            var BanReason = prompt("Ban Reason");
+            if (BanReason) sendChat(".ban " + evt.target.userName + " " + BanReason);
+            evt.stopPropagation;
+            evt.cancelBubble;
+            evt.returnValue = false;
+            return false;
+        });
+        userDiv.appendChild(banHammer);
+    }
 	return userDiv;
 }
 

@@ -1,7 +1,6 @@
 ﻿var Logger = require("winston"),
 	Blessed = require("blessed"),
 	Util = require("util"),
-	cycle = require('cycle'),
 	colors = require('colors/safe');
 
 var screen = Blessed.screen({
@@ -48,7 +47,24 @@ screen.append(body);
 screen.key(["escape", "C-c"], (ch, key) => {
 	return process.exit(0);
 });
-
+screen.key(["up"], (ch, key) => {
+    body.scroll(-1);
+});
+screen.key(["down"], (ch, key) => {
+    body.scroll(1);
+});
+screen.key(["pageup"], (ch, key) => {
+    body.scroll(-10);
+});
+screen.key(["pagedown"], (ch, key) => {
+    body.scroll(10);
+});
+screen.key(["home"], (ch, key) => {
+    body.setScrollPerc(0);
+});
+screen.key(["end"], (ch, key) => {
+    body.setScrollPerc(100);
+});
 var updateStatus = module.exports.updateStatus = function (cells) {
 	for (var i=0;i<cells.length;i++) {
 		cells[i] = Blessed.parseTags(cells[i]);
@@ -101,6 +117,6 @@ customLogger.prototype.log = function (level, msg, meta, callback) {
 	body.setScrollPerc(100);
 	screen.render();
 }
-Logger.add(Logger.transports.customLogger, { level: 'debug'}).remove(Logger.transports.Console);
-
+Logger.add(Logger.transports.customLogger, { level: 'debug', handleExceptions: true, humanReadableUnhandledException: true}).remove(Logger.transports.Console);
+Logger.exitOnError = false;
 module.exports.log = Logger;

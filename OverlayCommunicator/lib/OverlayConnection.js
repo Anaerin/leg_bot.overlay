@@ -70,12 +70,7 @@ module.exports = class OverlayConnection extends EventEmitter {
         });
     }
     sendByFunc(data, callback) {
-        var removals = [];
-        for (var i = 0; i < this.replayBuffer.length; i++) {
-            if (callback(this.replayBuffer[i])) removals.unshift(i);
-        }
-        removals.forEach(deadIndex => {
-            this.replayBuffer.splice(deadIndex, 1);
-        });
+        this.removeByCallback(callback);
+        this.send(data);
     }
 }

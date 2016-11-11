@@ -5,9 +5,9 @@ var LegBotConnector = require("./lib/LegBotConn.js");
 var TwitchConnector = require("./lib/TwitchConnector.js");
 var StreamTipConnector = require("./lib/StreamTipConnector.js");
 var ServeStatic = require("./lib/ServeStatic.js");
-var Streamer = require("./secrets.js").Streamer;
 var log = require("./lib/ConsoleLogging.js");
-
+var open = require("open");
+var LegBotConn;
 var WebSocketServer = require('websocket').server,
 	http = require('http'),
 	url = require("url");
@@ -19,11 +19,11 @@ var server = http.createServer(function (request, response) {
 	if (uri.query && uri.query["code"]) {
 		switch (uri.query["state"]) {
 			case "Twitch":
-				//console.log("Got code for Twitch");
+				log.log.debug("Got code for Twitch");
 				TwitchConn.receivedCode(uri.query["code"]);
 				break;
 			case "StreamTip":
-				//console.log("Got code for StreamTip");
+				log.log.debug("Got code for StreamTip");
 				StreamTipConn.receivedCode(uri.query["code"]);
 				break;
 			default:
@@ -81,7 +81,25 @@ ControlConn.on("ReceivedJSON", message => {
 
 var OverlayConn = new OverlayConnection(wsServer);
 
-var TwitchConn = new TwitchConnector(Streamer);
+var TwitchConn = new TwitchConnector();
+TwitchConn.on("ValidatedToken", streamer => {
+    LegBotConn = new LegBotConnector(streamer);
+    LegBotConn.on("Status", state => {
+        ControlConn.sendOne({ type: "Status(LegBot)", status: state });
+        updateStatus();
+    });
+    LegBotConn.on("GameChanged", (game, stat) => {
+        log.log.info("Got GameChanged from LegBotConn. Sending it on");
+        ControlConn.sendOne({ type: "GameChanged", value: game, stat: stat });
+        OverlayConn.sendOne({ type: "GameChanged", value: game, stat: stat });
+    });
+    LegBotConn.on("StatChanged", stat => {
+        log.log.info("Got StatChanged event", stat, LegBotConn.stats[stat]);
+        ControlConn.sendByFunc({ type: "StatChanged", stat: stat, value: LegBotConn.stats[stat] }, function (test) { return test.stat == stat; });
+        OverlayConn.sendByFunc({ type: "StatChanged", stat: stat, value: LegBotConn.stats[stat] }, function (test) { return test.stat == stat; });
+    });
+    LegBotConn.connect();
+});
 TwitchConn.on("Status", state => {
 	ControlConn.sendOne({ type: "Status(Twitch)", status: state });
 	updateStatus();
@@ -141,6 +159,10 @@ TwitchConn.on("StreamDetailsUpdated", () => {
 	ControlConn.sendOne({ type: "TwitchDetails", game: TwitchConn.game, title: TwitchConn.title });
 	OverlayConn.sendOne({ type: "TwitchDetails", game: TwitchConn.game, title: TwitchConn.title });
 });
+TwitchConn.on("TwitchDisplayName", streamer => {
+    ControlConn.sendOne({ type: "StreamerName", name: streamer });
+    OverlayConn.sendOne({ type: "StreamerName", name: streamer });
+});
 var StreamTipConn = new StreamTipConnector();
 StreamTipConn.on("Status", state => {
 	ControlConn.sendOne({ type: "Status(StreamTip)", status: state });
@@ -158,23 +180,6 @@ StreamTipConn.on("GoalUpdated", () => {
 	OverlayConn.send({ type: "GoalUpdated", goal: StreamTipConn.goal });
 });
 
-
-var LegBotConn = new LegBotConnector(Streamer);
-// open("http://localhost:8000/OverlayControl.html");
-LegBotConn.on("Status", state => {
-	ControlConn.sendOne({ type: "Status(LegBot)", status: state });
-	updateStatus();
-});
-LegBotConn.on("GameChanged", game => {
-	ControlConn.sendOne({ type: "GameChanged", value: game });
-	OverlayConn.sendOne({ type: "GameChanged", value: game });
-});
-LegBotConn.on("StatChanged", (stat, value) => {
-	ControlConn.sendByFunc({ type: "StatChanged", stat: stat, value: value }, test => test.stat == stat);
-	OverlayConn.sendByFunc({ type: "StatChanged", stat: stat, value: value }, test => test.stat == stat);
-});
-
-
 ControlConn.on("OpenConnections", count => {
     ControlConn.sendOne({ type: "ControlConnections", count: count });
     OverlayConn.sendOne({ type: "ControlConnections", count: count });
@@ -187,16 +192,28 @@ OverlayConn.on("OpenConnections", count => {
 });
 
 function updateStatus() {
-	var output = [
-		"{bold}Twitch{/bold}: " + TwitchConn.status,
-		"{bold}Leg_Bot{/bold}: " + LegBotConn.status,
-		"{bold}StreamTip{/bold}: " + StreamTipConn.status,
-		"{bold}Overlays{/bold}: " + OverlayConn.connections,
-		"{bold}Controls{/bold}: " + ControlConn.connections
-	]
+    var output;
+    if (LegBotConn) {
+        output = [
+            "{bold}Twitch{/bold}: " + TwitchConn.status,
+            "{bold}Leg_Bot{/bold}: " + LegBotConn.status,
+            "{bold}StreamTip{/bold}: " + StreamTipConn.status,
+            "{bold}Overlays{/bold}: " + OverlayConn.connections,
+            "{bold}Controls{/bold}: " + ControlConn.connections
+        ]
+    } else {
+        output = [
+            "{bold}Twitch{/bold}: " + TwitchConn.status,
+            "{bold}Leg_Bot{/bold}: Waiting for Username from Twitch",
+            "{bold}StreamTip{/bold}: " + StreamTipConn.status,
+            "{bold}Overlays{/bold}: " + OverlayConn.connections,
+            "{bold}Controls{/bold}: " + ControlConn.connections
+        ]
+    }
 	log.updateStatus(output);
 }
 
 StreamTipConn.connect();
 TwitchConn.connect();
-LegBotConn.connect();
+//LegBotConn.connect();
+open("http://localhost:8000/OverlayControl.html");

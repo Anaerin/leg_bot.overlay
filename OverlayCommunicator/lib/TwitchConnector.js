@@ -8,9 +8,10 @@ const oAuth = require("./oAuthHandler.js");
 const TwitchSecrets = require("../secrets.js").Twitch;
 var log = require("./ConsoleLogging.js").log;
 module.exports = class TwitchConnector extends EventEmitter {
-	constructor(streamer) {
+	constructor() {
 		super();
-		this.streamer = streamer;
+        this.streamer = false;
+        this.display_name = false;
 		this.followers = [];
 		this.followerCount = 0;
 		this.game = "";
@@ -83,6 +84,8 @@ module.exports = class TwitchConnector extends EventEmitter {
 	getAPIValue(url, callback) {
 		var requestObj = {
 			url: url,
+			method: "GET",
+			json: true,
 			headers: {
 				Accept: "application/vnd.twitchtv.v3+json",
 				'Client-ID': this.oAuth.clientID,
@@ -90,7 +93,7 @@ module.exports = class TwitchConnector extends EventEmitter {
 			}
 		}		
 		var returnVal;
-		var request = this.tmi.api(requestObj, callback);
+		var request = Request(requestObj, callback);
 	}
 	updateFollowers() {
 		this.getAPIValue("https://api.twitch.tv/kraken/channels/" + this.streamer + "/follows?limit=100", (err, res, body) => {
@@ -128,72 +131,96 @@ module.exports = class TwitchConnector extends EventEmitter {
 	}
 	connect() {
 		if (this.oAuth.accessToken) {
-			if (!this.tmi) {
-				this.tmi = new TMI.client({
-					connection: {
-						reconnect: true,
-						secure: true
-					},
-					identity: {
-						username: this.streamer,
-						password: "oauth:" + this.oAuth.accessToken
-					},
-					channels: [this.streamer]
-				});
-				this.tmi.on("chat", (channel, userstate, message, self) => {
-					log.debug("DEBUG: TwitchConnector: Message received: %s", message);
-					this.emit("ChatMessage", userstate, message, self);
-				});
-				this.tmi.on("whisper", (from, userstate, message, self) => {
-					this.emit("ChatWhisper", from, userstate, message, self);
-				});
-				this.tmi.on("clearchat", channel => {
-					this.emit("ChatClear");
-				});
-				this.tmi.on("action", (channel, userstate, message, self) => {
-					this.emit("ChatAction", userstate, message, self);
-				});
-				this.tmi.on("hosted", (channel, username, viewers) => {
-					this.emit("ChatHosted", username, viewers);
-				});
-				this.tmi.on("subscription", username => {
-					this.emit("ChatSubscription", username);
-				});
-				this.tmi.on("resub", (channel, username, months, message) => {
-					this.emit("ChatResubscription", username, months, message );
-				});
-				this.tmi.on("timeout", (channel, username, reason, duration) => {
-					this.emit("ChatTimeout", username, reason, duration );
-				});
-				this.tmi.on("disconnected", reason => {
-					this.status = "Reconnecting";
-					this.emit("Status", "Reconnecting");
-					log.debug("TwitchConnector: Disconnected - %s", reason);
-				});
-				this.tmi.on("connecting", (address, port) => {
-					this.status = "Connecting";
-					this.emit("Status", "Connecting");
-					log.debug("TwitchConnector: Connecting to %s:%s", address, port);
-				});
-				this.tmi.on("connected", (address, port) => {
-					this.status = "Connected";
-					this.emit("Status", "Connected");
-					log.debug("TwitchConnector: Connected to %s:%s", address, port);
-				});
-				this.tmi.on("error", error => {
-					this.status = "Error";
-					this.emit("Status", "Error");
-					log.error("TwitchConnector: Error: %s", error);
-				});
-				this.tmi.on("roomstate", (channel, state) => {
-					this.getStreamDetails();
-					log.info("Got ROOMSTATE, updating twitch details.");
-				});
-				this.tmi.connect();
-				this.getFollowers();
+			if (this.streamer) {
+				if (!this.tmi) {
+					this.tmi = new TMI.client({
+						connection: {
+							reconnect: true,
+							secure: true
+						},
+						identity: {
+							username: this.streamer,
+							password: "oauth:" + this.oAuth.accessToken
+						},
+						channels: [this.streamer]
+					});
+					this.tmi.on("chat", (channel, userstate, message, self) => {
+						log.debug("DEBUG: TwitchConnector: Message received: %s", message);
+						this.emit("ChatMessage", userstate, message, self);
+					});
+					this.tmi.on("whisper", (from, userstate, message, self) => {
+						this.emit("ChatWhisper", from, userstate, message, self);
+					});
+					this.tmi.on("clearchat", channel => {
+						this.emit("ChatClear");
+					});
+					this.tmi.on("action", (channel, userstate, message, self) => {
+						this.emit("ChatAction", userstate, message, self);
+					});
+					this.tmi.on("hosted", (channel, username, viewers) => {
+						this.emit("ChatHosted", username, viewers);
+					});
+					this.tmi.on("subscription", username => {
+						this.emit("ChatSubscription", username);
+					});
+					this.tmi.on("resub", (channel, username, months, message) => {
+						this.emit("ChatResubscription", username, months, message);
+					});
+					this.tmi.on("timeout", (channel, username, reason, duration) => {
+						this.emit("ChatTimeout", username, reason, duration);
+					});
+					this.tmi.on("disconnected", reason => {
+						this.status = "Reconnecting";
+						this.emit("Status", "Reconnecting");
+						log.debug("TwitchConnector: Disconnected - %s", reason);
+					});
+					this.tmi.on("connecting", (address, port) => {
+						this.status = "Connecting";
+						this.emit("Status", "Connecting");
+						log.debug("TwitchConnector: Connecting to %s:%s", address, port);
+					});
+					this.tmi.on("connected", (address, port) => {
+						this.status = "Connected";
+						this.emit("Status", "Connected");
+						log.debug("TwitchConnector: Connected to %s:%s", address, port);
+					});
+					this.tmi.on("error", error => {
+						this.status = "Error";
+						this.emit("Status", "Error");
+						log.error("TwitchConnector: Error: %s", error);
+					});
+					this.tmi.on("roomstate", (channel, state) => {
+						this.getStreamDetails();
+						log.info("Got ROOMSTATE, updating twitch details.");
+					});
+					this.tmi.connect();
+					this.getFollowers();
+				}
+			} else {
+                this.getAPIValue("https://api.twitch.tv/kraken", (err, res, body) => {
+                    if (body.token && body.token.valid) {
+                        this.streamer = body.token.user_name;
+                        log.debug("TwitchConnector: Validated token. Username is", body.token.user_name);
+                        this.emit("ValidatedToken", this.streamer);
+                        this.getAPIValue("https://api.twitch.tv/kraken/user", (newErr, newRes, newBody) => {
+                            if (newErr) {
+                                log.error("Can't get username" + newErr);
+                                return;
+                            }
+                            if (newBody.display_name) {
+                                this.display_name = newBody.display_name;
+                                this.emit("TwitchDisplayName", this.display_name);
+                            }
+                        });
+                        this.connect();
+                    } else {
+                        log.warn("TwitchConnector got invalid Token response", body);
+                    }
+                });
 			}
 		}
 	}
+
 
 	sendChat(message) {
 		if (this.tmi) {
@@ -202,6 +229,7 @@ module.exports = class TwitchConnector extends EventEmitter {
 	}
 
 	receivedCode(code) {
+		log.debug("TwitchConnector: Setting code");
 		this.oAuth.accessToken = code;
 	}
 }
