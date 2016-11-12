@@ -117,6 +117,8 @@ customLogger.prototype.log = function (level, msg, meta, callback) {
 	body.setScrollPerc(100);
 	screen.render();
 }
-Logger.add(Logger.transports.customLogger, { level: 'debug', handleExceptions: true, humanReadableUnhandledException: true}).remove(Logger.transports.Console);
+Logger.add(Logger.transports.customLogger, { level: 'debug' }).remove(Logger.transports.Console).add(Logger.transports.File, { filename: 'overlay.log', level: 'debug' });
 Logger.exitOnError = false;
+Logger.handleExceptions = true;
+Logger.humanReadableUnhandledException = true;
 module.exports.log = Logger;

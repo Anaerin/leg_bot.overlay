@@ -24,11 +24,14 @@ module.exports = class StreamTipConnector extends EventEmitter {
 				"&state=StreamTip");
 		});
 		this.oAuth.on("AuthComplete", () => {
-			this.emit("AuthComplete");
+			log.debug("StreamTipConnector: Got AuthComplete signal");
 			if (!this.streamTip) {
+				log.debug("StreamTipConnector: Got AuthComplete without streamtip object, connecting");
                 this.connect();
 				this._goal = this.getActiveGoal();
 			}
+			log.debug("StreamTipConnector: Emitting AuthComplete");
+			this.emit("AuthComplete");
 			this.status = "Auth Complete";
 			this.emit("Status", "Auth Complete");
 		});
@@ -103,11 +106,8 @@ module.exports = class StreamTipConnector extends EventEmitter {
 		return this._goal;
 	}
 	receivedCode(code) {
+		log.debug("StreamTip: Got Access code, processing...");
 		this.oAuth.accessToken = code;
-		this.oAuth.on("AuthComplete", () => {
-			this.status = "Connecting";
-            this.emit("Status", "Connecting");
-            this.connect();
-		});
+		log.debug("StreamTip: accessToken set, waiting for Auth Complete...");		
 	}
 }

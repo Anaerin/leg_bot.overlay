@@ -12,6 +12,16 @@ var WebSocketServer = require('websocket').server,
 	http = require('http'),
 	url = require("url");
 
+process.on("beforeExit", (exitCode) => {
+	log.log.error("beforeExit called - No more events?", exitCode);
+});
+process.on("uncaughtException", (err) => {
+	log.log.error("Process error", err);
+});
+process.on("unhandledRejection", (reason, p) => {
+	log.log.error("Unhandled Rejection of promise", reason, p);
+});
+
 var server = http.createServer(function (request, response) {
 	//console.log((new Date()) + ' Received request for ' + request.url);
 	var uri = url.parse(request.url, true);

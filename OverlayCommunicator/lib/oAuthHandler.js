@@ -1,8 +1,9 @@
 ﻿"use strict";
 const EventEmitter = require("events").EventEmitter,
 	HTTPS = require("https").request,
-	URL = require("url"),
-	QueryString = require("querystring");
+	Request = require("request"),
+	URL = require("url");
+	//QueryString = require("querystring");
 
 var log = require("./ConsoleLogging.js").log;
 
@@ -21,17 +22,19 @@ module.exports = class oAuthHandler extends EventEmitter {
 	}
 
 	hasValidToken() {
-        log.debug("%s:Checking for valid token", this.authPath);
+        //log.debug("%s:Checking for valid token", this.authPath);
         var isValid = false;
-        if (this.AccessToken) {
-            log.debug("%s:Have token", this.authPath);
-            isValid = true;
+		log.debug("%s:Checking values. AccessToken: %s, ExpiresIn: %s, RefreshToken: %s, RefreshTokenExpires: %s", this.authPath, this.AccessToken, this.AccessTokenExpires, this.RefreshToken, this.RefreshTokenExpires);
+		if (this.AccessToken) {
+			log.debug("%s:Have token", this.authPath);
+			isValid = true;
 		}
 		if (this.AccessTokenExpires && this.AccessTokenExpires < new Date(Date.now()).getTime()) {
             log.debug("%s:Token has expiry, and has expired", this.authPath);
             isValid = false;
 		}
-        if (!isValid) {
+		log.debug("%s:Checking values finished. Is Valid? %s", this.authPath, isValid);
+		if (!isValid) {
             log.debug("%s:Token is not valid thus far...", this.authPath);
             if (this.RefreshToken && this.RefreshTokenExpires > new Date(Date.now()).getTime()) {
                 log.debug("%s:Have valid refresh token, using it", this.authPath);
@@ -46,58 +49,73 @@ module.exports = class oAuthHandler extends EventEmitter {
 		return isValid;
 	}
 	getToken(postData) {
-		var requestData = QueryString.stringify(postData);
-		var returnData = "";
-		var requestOptions = URL.parse(this.authPath);
-		requestOptions.method = "post";
+		log.debug("oAuth: inside getToken");
+		// Patched to use request, rather than https.request
+		//var requestData = QueryString.stringify(postData);
+		//var returnData = "";
+		log.debug("oAuth: Parsing authPath",this.authPath);
+		var requestOptions = {
+			url: this.authPath,
+			method: "POST",
+			form: postData,
+			json: true
+		};
+		/*
 		requestOptions.headers = {
 			'Content-Type': 'application/x-www-form-urlencoded',
 			'Content-Length': Buffer.byteLength(requestData)
-		};
+		};*/
+
 		var complete = false;
 		log.debug("oAuth: Posting token");
-		var request = HTTPS(requestOptions, res => {
+		var request = Request(requestOptions, (err, res, body) => {
+			/*
+			log.debug("%s: oAuthHandler Request set up", this.authPath);
 			res.setEncoding('utf8');
+			log.debug("%s: oAuthHandler Setting up events", this.authPath);
+			res.on("error", err => {
+				log.warn("%s: oAuthHandler response Error: %s", this.authPath, err);
+			});
 			res.on('data', chunk => {
+				log.debug("oAuth: Got data", chunk);
 				try {
 					var result = JSON.parse(returnData + chunk);
 				} catch (e) {
 					// Data isn't complete, or didn't parse for some reason
+					log.debug("oAuth: Data doesn't parse. Gimme more pls.");
 					returnData += chunk
+				} */
+			if (body) {
+				log.debug("%s: Retrieved access token: %s (Type: %s)", this.authPath, body, typeof(body));
+				this.AccessToken = body.access_token;
+				log.debug("%s: Set access token. Have we crashed yet?", this.authPath);
+				if (body.expires_in) {
+					log.debug("%s:Have expiry time for token", this.authPath);
+					this.AccessTokenExpires = new Date(Date.now()).getTime() + (body.expires_in * 1000);
+				} else {
+					log.debug("%s:No expiry time for token", this.authPath);
+					this.AccessTokenExpires = false;
 				}
-				if (result) {
-                    log.debug("%s:Retrieved access token: ", this.authPath, result);
-                    this.AccessToken = result.access_token;
-                    if (result.expires_in) {
-                        log.debug("%s:Have expiry time for token", this.authPath);
-                        this.AccessTokenExpires = new Date(Date.now()).getTime() + (result.expires_in * 1000);
-                    } else {
-                        log.debug("%s:No expiry time for token", this.authPath);
-                        this.AccessTokenExpires = false;
-                    }
-                    if (result.refresh_token) {
-                        log.debug("%s:Have refresh token", this.authPath);
-                        this.RefreshToken = result.refresh_token;
-                        this.RefreshTokenExpires = new Date(Date.now()).getTime() + 2592000000;
-                    } else {
-                        log.debug("%s:No refresh token", this.authPath);
-                        this.RefreshToken = false;
-                        this.RefreshTokenExpires = false;
-                    }
-					//Here's hoping we don't get multi-chunk data. The try/catch should sort it out, hopefully...
-                    complete = true;
-                    this.emit("AuthComplete");
-				};
-            });
-            res.on("error", err => {
-                log.error("%s: oAuthHandler response Error: %s", this.authPath, err);
-            });
+				if (body.refresh_token) {
+					log.debug("%s:Have refresh token", this.authPath);
+					this.RefreshToken = body.refresh_token;
+					this.RefreshTokenExpires = new Date(Date.now()).getTime() + 2592000000;
+				} else {
+					log.debug("%s:No refresh token", this.authPath);
+					this.RefreshToken = false;
+					this.RefreshTokenExpires = false;
+				}
+				//Here's hoping we don't get multi-chunk data. The try/catch should sort it out, hopefully...
+				complete = true;
+				log.debug("%s:Set values. AccessToken: %s, ExpiresIn: %s, RefreshToken: %s, RefreshTokenExpires: %s", this.authPath, this.AccessToken, this.AccessTokenExpires, this.RefreshToken, this.RefreshTokenExpires);
+				this.emit("AuthComplete");
+			} else {
+					log.debug("%s: That's not a valid result. Er... Help? err: %s, res: %s", this.authPath, err, res);
+				//} */
+            }//);
         });
-        request.on("error", error => {
-            log.error("%s: Got HTTP error: %s", this.authPath, error);
-        });
-		request.write(requestData);
-		request.end();
+		/* request.write(requestData);
+		request.end(); */
 		return complete;
 	}
 	refreshTokenWithRefreshToken() {
