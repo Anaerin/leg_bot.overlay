@@ -57,8 +57,7 @@ module.exports = class oAuthHandler extends EventEmitter {
 		var requestOptions = {
 			url: this.authPath,
 			method: "POST",
-			form: postData,
-			json: true
+			form: postData
 		};
 		/*
 		requestOptions.headers = {
@@ -85,20 +84,23 @@ module.exports = class oAuthHandler extends EventEmitter {
 					log.debug("oAuth: Data doesn't parse. Gimme more pls.");
 					returnData += chunk
 				} */
-			if (body) {
-				log.debug("%s: Retrieved access token: %s (Type: %s)", this.authPath, body, typeof(body));
-				this.AccessToken = body.access_token;
+			log.debug("oAuth Token request has got... something...", body, res.statusCode, typeof(body));
+			var data = body;
+			if (typeof (data) === "string") data = JSON.parse(body);
+			if (data) {
+				log.debug("%s: Retrieved access token: %s (Type: %s)", this.authPath, data, typeof (data));
+				this.AccessToken = data.access_token;
 				log.debug("%s: Set access token. Have we crashed yet?", this.authPath);
-				if (body.expires_in) {
+				if (data.expires_in) {
 					log.debug("%s:Have expiry time for token", this.authPath);
-					this.AccessTokenExpires = new Date(Date.now()).getTime() + (body.expires_in * 1000);
+					this.AccessTokenExpires = new Date(Date.now()).getTime() + (data.expires_in * 1000);
 				} else {
 					log.debug("%s:No expiry time for token", this.authPath);
 					this.AccessTokenExpires = false;
 				}
-				if (body.refresh_token) {
+				if (data.refresh_token) {
 					log.debug("%s:Have refresh token", this.authPath);
-					this.RefreshToken = body.refresh_token;
+					this.RefreshToken = data.refresh_token;
 					this.RefreshTokenExpires = new Date(Date.now()).getTime() + 2592000000;
 				} else {
 					log.debug("%s:No refresh token", this.authPath);

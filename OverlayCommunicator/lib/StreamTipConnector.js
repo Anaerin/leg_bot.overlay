@@ -7,7 +7,7 @@ const EventEmitter = require("events").EventEmitter,
 
 const oAuth = require("./oAuthHandler.js");
 const StreamTipSecrets = require("../secrets.js").StreamTip;
-var log = require("./ConsoleLogging.js").log;
+const log = require("./ConsoleLogging.js").log;
 
 module.exports = class StreamTipConnector extends EventEmitter {
 	constructor() {

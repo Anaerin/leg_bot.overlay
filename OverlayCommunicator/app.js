@@ -21,7 +21,7 @@ process.on("uncaughtException", (err) => {
 process.on("unhandledRejection", (reason, p) => {
 	log.log.error("Unhandled Rejection of promise", reason, p);
 });
-
+log.log.debug("Hi, Reila! Glad to see files have been updated!");
 var server = http.createServer(function (request, response) {
 	//console.log((new Date()) + ' Received request for ' + request.url);
 	var uri = url.parse(request.url, true);
@@ -173,6 +173,7 @@ TwitchConn.on("TwitchDisplayName", streamer => {
     ControlConn.sendOne({ type: "StreamerName", name: streamer });
     OverlayConn.sendOne({ type: "StreamerName", name: streamer });
 });
+
 var StreamTipConn = new StreamTipConnector();
 StreamTipConn.on("Status", state => {
 	ControlConn.sendOne({ type: "Status(StreamTip)", status: state });
