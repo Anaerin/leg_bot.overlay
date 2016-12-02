@@ -11,10 +11,10 @@
   "dependencies": {
     "blessed": "^0.1.81",
     "colors": "^1.1.2",
-    "debug": "^2.3.2",
+    "debug": "^2.3.3",
     "extend": "^3.0.0",
     "open": "0.0.5",
-    "request": "^2.78.0",
+    "request": "^2.79.0",
     "tmi.js": "^1.1.2",
     "util": "^0.10.3",
     "websocket": "^1.0.23",

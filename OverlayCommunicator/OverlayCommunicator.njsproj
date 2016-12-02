@@ -44,6 +44,8 @@
     <Compile Include="Overlay\js\ChatProcessor.js" />
     <Compile Include="Overlay\js\StreamerCounts.js" />
     <Compile Include="Overlay\js\WebCamDisplay.js" />
+    <Content Include="certs\my-private-root-ca.cert.pem" />
+    <Content Include="certs\privkey.pem" />
     <Content Include="Overlay\css\stylesheet-new.css" />
     <Content Include="Overlay\images\black-linen.png" />
     <Content Include="Overlay\images\diagmonds.png" />
@@ -73,6 +75,7 @@
     <Content Include="README.md" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="certs\" />
     <Folder Include="lib\" />
     <Folder Include="Overlay\" />
     <Folder Include="Overlay\images\" />

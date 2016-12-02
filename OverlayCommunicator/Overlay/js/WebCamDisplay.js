@@ -47,9 +47,9 @@
             console.log("Set constraints to:" + JSON.stringify(constraints));
         }
         if (navigator.mediaDevices) {
-            console.log("Got mediaDevices, attempting to open with promise");
+            console.log("Got mediaDevices, attempting to open with promise", navigator.mediaDevices);
             this.webcam = navigator.mediaDevices.getUserMedia(constraints).then(this.webcamCallback, err => {
-                console.log("Permissions Error: " + err);
+                console.log("Permissions Error",err);
             });
         } else if (navigator.getMedia) {
             console.log("Attempting to open webcam...");

@@ -21,7 +21,11 @@ function formatUser(userState, bAction) {
 		if (userState.badges.subscriber == 1) userDiv.classList.add("Subscriber");
 	}
 	if (userState.color) userDiv.style.color = userState.color;
-    userDiv.innerHTML = userState['display-name'];
+	if (userState['display-name']) {
+		userDiv.innerHTML = userState['display-name'];
+	} else {
+		userDiv.innerHTML = userState['username'];
+	}
     if (isAdminPage) {
         var purgeButton = document.createElement("a");
         purgeButton.innerHTML = "P";

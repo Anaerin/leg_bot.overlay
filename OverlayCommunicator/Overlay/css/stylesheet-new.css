@@ -4,6 +4,7 @@
 }
 body {
     background: rgba(0, 0, 0, 0);
+	/* background: black; */
     font-family: Calibri;
     font-size: 16px;
     margin: 0;
@@ -24,7 +25,7 @@ body {
 	-moz-background-clip: text;
 	-webkit-background-clip: text;
 	color: transparent;
-	background-size: 500% 500%;
+	background-size: 100% 1000%;
 	-webkit-animation: RollingGradient 30s ease infinite;
 	-moz-animation: RollingGradient 30s ease infinite;
 	animation: RollingGradient 30s ease infinite;
@@ -50,24 +51,24 @@ body {
 
 @keyframes StretchShrink {
 	0%{width: 40px}
-	5%{width: 210px}
-	35%{width: 210px}
+	5%{width: 300px}
+	35%{width: 300px}
 	40%{width: 40px}
 	100%{width: 40px}
 }
 
 @-moz-keyframes StretchShrink {
 	0%{width: 40px}
-	5%{width: 210px}
-	35%{width: 210px}
+	5%{width: 300px}
+	35%{width: 300px}
 	40%{width: 40px}
 	100%{width: 40px}
 }
 
 @-webkit-keyframes StretchShrink {
 	0%{width: 40px}
-	5%{width: 210px}
-	35%{width: 210px}
+	5%{width: 300px}
+	35%{width: 300px}
 	40%{width: 40px}
 	100%{width: 40px}
 }
@@ -398,37 +399,37 @@ label[for="progressBar"] {
 }
 */
 
-#MessageLog .ChatLine:nth-child(1), #MessageLog .WhisperLine:nth-child(1) {
+#MessageLog > :nth-child(1) {
 	opacity: 1;
 }
-#MessageLog .ChatLine:nth-child(2), #MessageLog .WhisperLine:nth-child(2)  {
+#MessageLog > :nth-child(2) {
 	opacity: 0.9;
 }
-#MessageLog .ChatLine:nth-child(3), #MessageLog .WhisperLine:nth-child(3)  {
+#MessageLog > :nth-child(3) {
 	opacity: 0.8;
 }
-#MessageLog .ChatLine:nth-child(4), #MessageLog .WhisperLine:nth-child(4)  {
+#MessageLog > :nth-child(4) {
 	opacity: 0.7;
 }
-#MessageLog .ChatLine:nth-child(5), #MessageLog .WhisperLine:nth-child(5)  {
+#MessageLog > :nth-child(5) {
 	opacity: 0.6;
 }
-#MessageLog .ChatLine:nth-child(6), #MessageLog .WhisperLine:nth-child(6)  {
+#MessageLog > :nth-child(6) {
 	opacity: 0.5;
 }
-#MessageLog .ChatLine:nth-child(7), #MessageLog .WhisperLine:nth-child(7)  {
+#MessageLog > :nth-child(7) {
 	opacity: 0.4;
 }
-#MessageLog .ChatLine:nth-child(8), #MessageLog .WhisperLine:nth-child(8)  {
+#MessageLog > :nth-child(8) {
 	opacity: 0.3;
 }
-#MessageLog .ChatLine:nth-child(9), #MessageLog .WhisperLine:nth-child(9)  {
+#MessageLog > :nth-child(9) {
 	opacity: 0.2;
 }
-#MessageLog .ChatLine:nth-child(10), #MessageLog .WhisperLine:nth-child(10)  {
+#MessageLog > :nth-child(10) {
 	opacity: 0.1;
 }
-#MessageLog .ChatLine:nth-child(1n+11), #MessageLog .WhisperLine:nth-child(1n+11)  {
+#MessageLog > :nth-child(1n+11) {
 	opacity: 0;
 }
 
@@ -444,10 +445,11 @@ label[for="progressBar"] {
 	vertical-align: bottom;
 	-webkit-transform: scaleY(-1);
 	transform: scaleY(-1);
-	font-size: 1.3em;
+	font-size: 1.5em;
+	font-weight: 700;
 }	
 #MessageLog > div {
-	text-shadow: 1px 1px 1px white, -1px -1px 1px white, 1px -1px 1px white, -1px 1px 1px white;
+	text-shadow: 2px 2px 0px white, -2px -2px 0px white, 2px -2px 0px white, -2px 2px 0px white, 2px 0px 0px white, -2px 0px 0px white, 0px 2px 0px white, 0px -2px 0px white;
 	transition: opacity linear 5s;
 	margin-left: 380px;
 	/* border-left: 2px inset #cccccc; */

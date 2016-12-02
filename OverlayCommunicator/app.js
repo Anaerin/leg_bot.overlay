@@ -8,6 +8,7 @@ var ServeStatic = require("./lib/ServeStatic.js");
 var log = require("./lib/ConsoleLogging.js");
 var open = require("open");
 var LegBotConn;
+
 var WebSocketServer = require('websocket').server,
 	http = require('http'),
 	url = require("url");
@@ -21,9 +22,8 @@ process.on("uncaughtException", (err) => {
 process.on("unhandledRejection", (reason, p) => {
 	log.log.error("Unhandled Rejection of promise", reason, p);
 });
-log.log.debug("Hi, Reila! Glad to see files have been updated!");
 var server = http.createServer(function (request, response) {
-	//console.log((new Date()) + ' Received request for ' + request.url);
+	console.log((new Date()) + ' Received request for ' + request.url);
 	var uri = url.parse(request.url, true);
 	
 	if (uri.query && uri.query["code"]) {
@@ -85,12 +85,18 @@ ControlConn.on("ReceivedJSON", message => {
 			TwitchConn.setStreamDetails(message.game, message.title);
 			break;
 		default:
-			OverlayConn.send(message);
+			OverlayConn.sendOnce(message);
 	}
 });
 
 var OverlayConn = new OverlayConnection(wsServer);
-
+OverlayConn.on("ReceivedJSON", message => {
+	switch (message.type) {
+		case "VideoStream":
+			ControlConn.sendOne(message)
+			break;
+	}
+});
 var TwitchConn = new TwitchConnector();
 TwitchConn.on("ValidatedToken", streamer => {
     LegBotConn = new LegBotConnector(streamer);
@@ -122,8 +128,8 @@ TwitchConn.on("ChatMessage", (userstate, message, self) => {
 	ControlConn.send({ type: "ChatMessage", userstate: userstate, message: message, self: self });
 });
 TwitchConn.on("NewFollower", follower => {
-	OverlayConn.send({ type: "NewFollower", value: follower });
-	ControlConn.send({ type: "NewFollower", value: follower });
+	OverlayConn.send({ type: "NewFollower", value: follower, isTest: false });
+	ControlConn.send({ type: "NewFollower", value: follower, isTest: false });
 });
 TwitchConn.on("ChatHosted", (username, viewers) => {
 	OverlayConn.send({ type: "ChatHosted", username: username, viewers: viewers });
