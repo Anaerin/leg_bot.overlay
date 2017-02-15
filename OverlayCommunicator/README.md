@@ -1,4 +1,9 @@
 ﻿# OverlayCommunicator
+
+**NOTE** This documentation is out of date, as of the shift to Electron. I'll get the information updated ASAP.
+
+---------
+
 This is a node.js server that connects to multiple services (Leg_Bot, Twitch and Streamtip), and exposes a HTTP server that serves static pages and provides two Websockets interfaces for overlay and control.
 
 The Websockets servers are simple, just relaying whatever events are sent their way. They have replay functionality, so re-connections should re-establish state.
