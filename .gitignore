@@ -220,3 +220,10 @@ ModelManifest.xml
 /OverlayCommunicator.njsperf
 /OverlayCommunicator_20161005.etl
 /OverlayCommunicator/npm-shrinkwrap.json
+/OverlayCommunicator/dist
+/OverlayCommunicator/dist/installers
+/OverlayCommunicator/dist/installers/overlaycommunicator-0.0.2-setup.exe
+/OverlayCommunicator/dist/installers/overlaycommunicator-0.0.2-setup.msi
+/OverlayCommunicator/dist/installers/RELEASES
+/OverlayCommunicator/dist/installers/overlaycommunicator-0.0.2-setup.msi
+/OverlayCommunicator/dist/installers/overlaycommunicator-0.0.2-setup.exe

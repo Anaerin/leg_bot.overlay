@@ -437,9 +437,9 @@ label[for="progressBar"] {
 #MessageLog {
 	position: absolute;
 	top: 0px;
-	right: 70px;
+	right: 0px;
 	bottom: 295px;
-    width: 669px;
+    width: 739px;
 	overflow: hidden;
 	display: table-cell;
 	vertical-align: bottom;

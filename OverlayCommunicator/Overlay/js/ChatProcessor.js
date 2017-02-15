@@ -27,23 +27,11 @@ function formatUser(userState, bAction) {
 		userDiv.innerHTML = userState['username'];
 	}
     if (isAdminPage) {
-        var purgeButton = document.createElement("a");
-        purgeButton.innerHTML = "P";
-        purgeButton.className = "UserButton";
-        purgeButton.userName = userState['username'];
-        purgeButton.addEventListener("click", evt => {
-            sendChat(".timeout " + evt.target.userName + " 0");
-            evt.stopPropagation;
-            evt.cancelBubble;
-            evt.returnValue = false;
-            return false;
-        });
-        userDiv.appendChild(purgeButton);
         var timeoutButton = document.createElement("a");
-        timeoutButton.innerHTML = "T";
+		timeoutButton.innerHTML = "&#128711;";
         timeoutButton.className = "UserButton";
         timeoutButton.userName = userState['username'];
-        timeoutButton.addEventListener("click", evt => {
+        timeoutButton.addEventListener("click", function(evt) {
             var TOlength = prompt("Timeout Length (seconds)", "0");
             var TOreason = prompt("Timeout reason");
             if (TOlength) sendChat(".timeout " + evt.target.userName + " " + TOlength + " " + TOreason);
@@ -54,10 +42,10 @@ function formatUser(userState, bAction) {
         });
         userDiv.appendChild(timeoutButton);
         var banHammer = document.createElement("a");
-        banHammer.innerHTML = "B";
+		banHammer.innerHTML = "&#128296;";
         banHammer.className = "UserButton";
         banHammer.userName = userState['username'];
-        banHammer.addEventListener("click", evt => {
+        banHammer.addEventListener("click", function(evt) {
             var BanReason = prompt("Ban Reason");
             if (BanReason) sendChat(".ban " + evt.target.userName + " " + BanReason);
             evt.stopPropagation;
@@ -123,5 +111,5 @@ function formatEmotes(text, emotes) {
 			}
 		}
 	}
-	return splitText.join('');
+	return htmlEscape(splitText.join('')).replace(/\&lt\;img class\=\&quot\;emoticon\&quot\; src\=\&quot\;http\:\/\/static-cdn\.jtvnw\.net\/emoticons\/v1\/(\d+)\/3\.0\&quot\;\&gt\;/g,'<img class="emoticon" src="http://static-cdn.jtvnw.net/emoticons/v1/$1/3.0">');
 }

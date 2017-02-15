@@ -8,29 +8,39 @@
 			margin: 0;
 			padding: 0;
 			overflow: hidden;
+			font-family: sans-serif;
+			background-color: #333333;
+			color: white;
 		}
-
+		.AuthBox {
+			height: 2em;
+			display: block;
+		}
+		.AuthBox button {
+		}
 		.leftside {
-			width: 50%;
 			margin: 0px;
 			padding: 0px;
 			position: absolute;
 			top: 0px;
 			left: 0px;
-			height: 100%;
+			right: 0px;
+			z-index: 3;
+			background-color: #333333;
+			padding-bottom: 4px;
 		}
 
 		.rightside {
-			width: 50%;
 			margin: 0px;
 			padding: 0px;
-			position: absolute;
-			right: 2px;
-			top: 0px;
-			bottom: 0px;
-			max-height: 100%;
-			overflow: hidden;
+			height: auto;
 			background-color: #cccccc;
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			right: 0px;
+			bottom: 0px;
+			z-index: 0;
 		}
 
 		.rightside #MessageLog {
@@ -45,280 +55,294 @@
 			-webkit-transform: scaleY(-1);
 			transform: scaleY(-1);
 			font-size: 1.5em;
-		}	
+		}
+			.rightside #MessageLog > div {
+				-webkit-transform: scaleY(-1);
+				transform: scaleY(-1);
+				color: black;
+				/* margin-left: 9em; */
+				border-bottom: 2px ridge #ffffff;
+				padding: 0.3em;
+				padding-left: 9.5em;
+			}
 		.rightside > div {
 			text-shadow: 2px 2px 1px white, -2px -2px 1px white, 2px -2px 1px white, -2px 2px 1px white, 3px 3px 5px black;
 			transition: opacity linear 5s;
 		}
-		.rightside .ChatLine, .rightside .ActionLine {
-			margin-left: 9em;
-			border-left: 2px inset #cccccc;
-			padding-left: 0.5em;
-			-webkit-transform: scaleY(-1);
-			transform: scaleY(-1);
-		}
 		.rightside .WhisperLine {
-			margin-left: 9em;
-			border-left: 2px inset #cccccc;
-			padding-left: 0.5em;
 			font-style: italic;
-			-webkit-transform: scaleY(-1);
-			transform: scaleY(-1);
 		}
-		fieldset fieldset {
+		fieldset {
 			float: left;
 		}
         fieldset hr {
             clear: left;
         }
-		.rightside #ChatInput {
-				position: absolute;
-				bottom: 0px;
-				right: 0px;
-				left: 5px;
-				width: 100%;
-			}
-			
-			.rightside img.emoticon {
-				height: 2em;
-			}
-			.rightside div.UserName {
-				display: inline-block;
-				width: 8em;
-				text-align: right;
-				margin-right: 1em;
-				margin-left: -9em;
-			}
-			.rightside div.Broadcaster {
-				font-weight: bold;
-			}
-			.DebugScroll {
-				position: absolute;
-				bottom: 0px;
-				left: 0px;
-				width: 100%;
-				overflow: hidden;
-				display: table-cell;
-				vertical-align: bottom;
-				background-color: #cccccc;
-				max-height: 50%;
-				display: none;
-			}
-			.DebugScroll div {
 
-			}
+		fieldset legend {
+			font-size: small;
+		}
+		.rightside #ChatInput {
+			position: absolute;
+			bottom: 0px;
+			right: 0px;
+			left: 5px;
+			width: 100%;
+		}
+			
+		.rightside img.emoticon {
+			height: 2em;
+		}
+		.rightside div.UserName {
+			display: inline-block;
+			width: 8em;
+			text-align: right;
+			margin-right: 1em;
+			margin-left: -9em;
+		}
+		.rightside div.Broadcaster {
+			font-weight: bold;
+		}
+		.Hidden {
+			height: 0;
+			overflow-y: hidden;
+		}
+		.Status {
+			float: left;
+		}
+		.Screens {
+			float: left;
+		}
+		.TextBox {
+			float: left;
+		}
+		.TestOptions:before {
+			display: block;
+			content: '';
+			clear: left;
+		}
+		button {
+			background-color: #333333;
+			border: 1px solid #555555;
+			color: white;
+		}
+		button.Active {
+			background-color: #444444;
+			border: 1px solid green;
+		}
 	</style>
 	<script language="JavaScript" type="text/javascript" src="js/ChatProcessor.js"></script>
 	<script language="JavaScript" type="text/javascript" src="js/adapter.js"></script>
 </head>
 <body>
 	<div class="leftside">
-		Status: <span id="status"></span><br />
-		<input id="open" type="button" value="Connect" />&nbsp;
-		<input id="close" type="button" value="Disconnect" />&nbsp;
-		<input id="connectWebcam" type="button" value="Connect Webcam" /><br />
-		<fieldset>
-			<legend>Feed Connection Status</legend>
-			<fieldset>
-				<legend>Twitch</legend>
-				<span id="TwitchStatus"></span>
-			</fieldset>
-			<fieldset>
-				<legend>StreamTip</legend>
-				<span id="StreamTipStatus"></span>
-			</fieldset>
-			<fieldset>
-				<legend>Leg_Bot</legend>
-				<span id="LegBotStatus"></span>
-			</fieldset>
-            <hr />
-            <fieldset>
-                <legend>Overlay</legend>
-                <span id="OverlayConnections">0</span>
-            </fieldset>
-            <fieldset>
-                <legend>Control</legend>
-                <span id="ControlConnections">0</span>
-            </fieldset>
+		<fieldset class="AuthBox">
+			<legend>Twitch</legend>
+			<span id="TwitchStatus">Not Connected</span>
 		</fieldset>
-		<fieldset>
+		<fieldset class="AuthBox">
+			<legend>StreamTip</legend>
+			<span id="StreamTipStatus">Not Connected</span>
+		</fieldset>
+		<fieldset class="AuthBox">
+			<legend>Leg_Bot</legend>
+			<span id="LegBotStatus">Not Connected</span>
+		</fieldset>
+        <fieldset class="AuthBox">
+            <legend>Overlay</legend>
+            <span id="OverlayConnections">0</span>
+        </fieldset>
+		<fieldset class="Screens">
 			<legend>Switch Screens</legend>
-			<button id="SwitchToAFK">Switch to AFK</button>
-			<button id="SwitchToGame">Switch to Game</button>
-			<button id="SwitchToBooth">Switch to Booth</button>
-			<button id="ToggleWebcam">Toggle Webcam</button>
+			<button id="SwitchToAFK">AFK</button>
+			<button id="SwitchToGame" class="Active">Game</button>
+			<button id="SwitchToBooth">Booth</button>
+			<button id="ToggleWebcam" class="Active">Webcam</button>
 		</fieldset>
-		<input type="text" name="AFKComment" id="AFKComment" placeholder="AFK Message" /><button id="UpdateAFK">Update AFK Message</button><br />
-		<input type="text" name="TwitchGame" id="TwitchGame" placeholder="Twitch Game Name"/><input type="text" name="TwitchTitle" id="TwitchTitle" placeholder="Stream Title"/><button id="UpdateTwitch">Update Twitch</button><br />
-		<input type="text" name="FollowerName" id="FollowerName" placeholder="Follower Name" /><button id="TestFollow">Test New Follower</button><br />
-		<input type="text" name="DonationName" id="DonationName" placeholder="Donator" /><input type="text" name="DonationCurrencySymbol" id="DonationCurrencySymbol" placeholder="$" /><input type="text" name="DonationAmount" id="DonationAmount" placeholder="0.00" /><button id="TestDonation">Test New Donation</button><br />
-		<input type="text" name="CounterName" id="CounterName" placeholder="Counter Name"/><input type="text" name="CounterValue" id="CounterValue" placeholder="5" /><button id="TestCounter">Test Counter Update</button>
-		<div class="DebugScroll" id="DebugScroll"></div>
+		<fieldset class="TextBox">
+			<legend>Update AFK Message</legend>
+			<input type="text" name="AFKComment" id="AFKComment" placeholder="AFK Message" /><button id="UpdateAFK">Update AFK Message</button><br />
+		</fieldset>
+		<fieldset class="TextBox">
+			<legend>Update Game/Title</legend>
+			<input type="text" name="TwitchGame" id="TwitchGame" placeholder="Twitch Game Name" /><input type="text" name="TwitchTitle" id="TwitchTitle" placeholder="Stream Title" /><button id="UpdateTwitch">Update Twitch</button><br />
+		</fieldset>
+		<fieldset class="TestOptions Hidden">
+			<legend onclick="this.parentElement.classList.toggle('Hidden');">Testing</legend>
+			<input type="text" name="FollowerName" id="FollowerName" placeholder="Follower Name" /><button id="TestFollow">Test New Follower</button><br />
+			<input type="text" name="DonationName" id="DonationName" placeholder="Donator" /><input type="text" name="DonationCurrencySymbol" id="DonationCurrencySymbol" placeholder="$" /><input type="text" name="DonationAmount" id="DonationAmount" placeholder="0.00" /><button id="TestDonation">Test New Donation</button><br />
+			<input type="text" name="CounterName" id="CounterName" placeholder="Counter Name" /><input type="text" name="CounterValue" id="CounterValue" placeholder="5" /><button id="TestCounter">Test Counter Update</button>
+		</fieldset>
 	</div>
 	<div class="rightside"><div id="MessageLog"></div><input type="text" name="ChatInput" id="ChatInput" /></div>
 	<script language="JavaScript" type="text/javascript">
-		"use strict";
 		// Initialize everything when the window finishes loading
         isAdminPage = true;
-        var socket;
-		function sendChat(text) {
-			if (socket) {
-				socket.send(JSON.stringify({ type: "ChatInput", value: text }));
-			}
+		//var socket;
+		const ipcRenderer = require("electron").ipcRenderer;
+		function sendMessage(message) {
+			console.log(">>", JSON.stringify(message));
+			ipcRenderer.send("message", JSON.stringify(message));
 		}
-		document.getElementById("ChatInput").addEventListener("keyup", function (event) {
+		ipcRenderer.on("message", receiveMessage);
+		document.getElementById("AFKComment").addEventListener("keyup", (event) => {
 			if (event.keyCode == 13) {
-				sendChat(event.currentTarget.value);
-				event.currentTarget.value = "";
+				document.getElementById("AFKComment").blur();
+				document.getElementById("UpdateAFK").click();
 				event.preventDefault();
 				event.returnValue = false;
 			}
 		});
-
-		function connectSocket(url) {
-			socket = new WebSocket(url, "control");
-
-			socket.onopen = function (event) {
-				document.getElementById("close").disabled = false;
-				document.getElementById("open").disabled = true;
-				document.getElementById("status").innerHTML = "Connected";
-				var buttons = document.getElementsByTagName("button");
-				for (var i = 0; i < buttons.length; i++) {
-					buttons[i].disabled = false;
+		document.getElementById("ChatInput").addEventListener("keyup", function (event) {
+			if (event.keyCode == 13) {
+				if (event.currentTarget.value.length > 0) {
+					sendChat(event.currentTarget.value);
+					event.currentTarget.value = "";
 				}
-			};
+				event.preventDefault();
+				event.returnValue = false;
+			}
+		});
+		function sendChat(message) {
+			sendMessage({ type: "ChatInput", value: message });
+		}
+		function receiveMessage(event, message) {
 
-			// Display messages received from the server
-			socket.onmessage = function (event) {
-				// document.getElementById("message").innerHTML = "Server Says: " + event.data;
-				document.getElementById("DebugScroll").innerHTML += "<div>" + htmlEscape(event.data) + "</div>";
-				document.getElementById("DebugScroll").lastChild.scrollIntoView();
-				console.log("Got message: %s", event.data);
-				var messageObj = {};
-				try {
-					messageObj = JSON.parse(event.data);
-				} catch (e) {
-					// Not JSON, we don't care;
-					return;
-				}
-				switch (messageObj.type) {
-					case "Status(Twitch)":
-						document.getElementById("TwitchStatus").innerHTML = messageObj.status;
-						break;
-					case "Status(StreamTip)":
-						document.getElementById("StreamTipStatus").innerHTML = messageObj.status;
-						break;
-					case "Status(LegBot)":
-						document.getElementById("LegBotStatus").innerHTML = messageObj.status;
-                        break;
-                    case "ControlConnections":
-                        document.getElementById("ControlConnections").innerHTML = messageObj.count;
-                        break;
-                    case "OverlayConnections":
-                        document.getElementById("OverlayConnections").innerHTML = messageObj.count;
-                        break;
-					case "NeedAuth":
-						window.location.href = messageObj.value;
-						break;
-					case "ChatMessage":
-						appendChatMessage(messageObj, false, formatChatMessage);
-						break;
-					case "ChatAction":
-						appendChatMessage(messageObj, false, formatActionMessage);
-						break;
-					case "ChatWhisper":
-						document.getElementById("MessageLog").insertBefore(formatWhisperMessage(messageObj), document.getElementById("MessageLog").firstChild);
-						break;
-					case "TwitchDetails":
-						document.getElementById("TwitchGame").value = messageObj.game;
-						document.getElementById("TwitchTitle").value = messageObj.title;
-						break;
-				}
-				//if (document.getElementById("MessageLog").lastChild) document.getElementById("MessageLog").lastChild.scrollIntoView();
-			};
-
-			socket.addEventListener('message', function (event) {
-				var evt = event.data;
-				if (typeof evt === "string") evt = JSON.parse(evt);
-				if (evt.type == "VideoStream") {
-					var message = evt.message;
-					console.log('Client received message:', message);
-					if (message === 'UserMedia') {
+			console.log("<<", message);
+			switch (message.type) {
+				case "Status(Twitch)":
+					document.getElementById("TwitchStatus").innerHTML = message.status;
+					break;
+				case "Status(StreamTip)":
+					document.getElementById("StreamTipStatus").innerHTML = message.status;
+					break;
+				case "Status(LegBot)":
+					document.getElementById("LegBotStatus").innerHTML = message.status;
+					break;
+				case "ControlConnections":
+					document.getElementById("ControlConnections").innerHTML = message.count;
+					break;
+				case "OverlayConnections":
+					document.getElementById("OverlayConnections").innerHTML = message.count;
+					break;
+				case "NeedAuth":
+					//window.location.href = message.value;
+					var connectButton = document.createElement("button");
+					connectButton.appendChild(document.createTextNode("Auth with " + message.service));
+					connectButton.onclick = (event) => {
+						sendMessage({ type: "AuthRequest", uri: message.uri });
+					}
+					document.getElementById(message.service + "Status").innerHTML = "";
+					document.getElementById(message.service + "Status").appendChild(connectButton);
+					break;
+				case "ChatMessage":
+					appendChatMessage(message, false, formatChatMessage);
+					break;
+				case "ChatAction":
+					appendChatMessage(message, false, formatActionMessage);
+					break;
+				case "ChatWhisper":
+					document.getElementById("MessageLog").insertBefore(formatWhisperMessage(message), document.getElementById("MessageLog").firstChild);
+					break;
+				case "TwitchDetails":
+					document.getElementById("TwitchGame").value = message.game;
+					document.getElementById("TwitchTitle").value = message.title;
+					var UpdateMessage = document.createElement("div");
+					UpdateMessage.appendChild(document.createTextNode("Twitch Updated - Game: " + message.game + ", Title: " + message.title));
+					document.getElementById("MessageLog").insertBefore(UpdateMessage, document.getElementById("MessageLog").firstChild);
+					break;
+				case "VideoStream":
+					if (message.message === 'UserMedia') {
 						maybeStart();
-					} else if (message.type === 'offer') {
+					} else if (message.message.type === 'offer') {
 						if (!isInitiator && !isStarted) {
 							maybeStart();
 						}
 						console.log("Setting remote description", message);
 						//pc.setRemoteDescription();
-						doAnswer(new RTCSessionDescription(message));
-					} else if (message.type === 'answer' && isStarted) {
-						pc.setRemoteDescription(new RTCSessionDescription(message));
-					} else if (message.type === 'candidate' && isStarted) {
+						doAnswer(new RTCSessionDescription(message.message));
+					} else if (message.message.type === 'answer' && isStarted) {
+						pc.setRemoteDescription(new RTCSessionDescription(message.message));
+					} else if (message.message.type === 'candidate' && isStarted) {
 						var candidate = new RTCIceCandidate({
-							sdpMLineIndex: message.label,
-							candidate: message.candidate
+							sdpMLineIndex: message.message.label,
+							candidate: message.message.candidate
 						});
 						pc.addIceCandidate(candidate);
-					} else if (message === 'bye' && isStarted) {
+					} else if (message.message === 'bye' && isStarted) {
 						handleRemoteHangup();
-					} else if (message.type === 'ready' && isChannelReady) {
-						sendMessage("UserMedia");
+					} else if (message.message.type == 'ready' && isChannelReady) {
+						maybeStart();
 					}
-				}
-			});
-
-			// Display any errors that occur
-			socket.addEventListener("error", function (event) {
-				document.getElementById("message").innerHTML = "Error: " + event.message;
-			});
-
-			socket.addEventListener("close", function (event) {
-				var buttons = document.getElementsByTagName("button");
-				for (var i = 0; i < buttons.length; i++) {
-					buttons[i].disabled = true;
-				}
-				document.getElementById("status").innerHTML = "Not Connected";
-				document.getElementById("open").disabled = false;
-			});
+					break;
+				case "NewFollower":
+					var UpdateMessage = document.createElement("div");
+					UpdateMessage.appendChild(document.createTextNode("New Follower: " + message.follower));
+					document.getElementById("MessageLog").insertBefore(UpdateMessage, document.getElementById("MessageLog").firstChild);
+					break;
+				case "ChatHosted":
+					var UpdateMessage = document.createElement("div");
+					UpdateMessage.appendChild(document.createTextNode("Hosted By " + message.username + ", for " + message.viewers + " viewers"));
+					document.getElementById("MessageLog").insertBefore(UpdateMessage, document.getElementById("MessageLog").firstChild);
+					break;
+				case "ChatSubscription":
+					var UpdateMessage = document.createElement("div");
+					UpdateMessage.appendChild(document.createTextNode("New Subscription by " + message.username));
+					document.getElementById("MessageLog").insertBefore(UpdateMessage, document.getElementById("MessageLog").firstChild);
+					break;
+				case "ChatResubscription":
+					var UpdateMessage = document.createElement("div");
+					UpdateMessage.appendChild(document.createTextNode("Resubscription by " + message.username + ", for " + message.months + " months: " + message.message));
+					document.getElementById("MessageLog").insertBefore(UpdateMessage, document.getElementById("MessageLog").firstChild);
+					break;
+				case "NewTip":
+					var UpdateMessage = document.createElement("div");
+					UpdateMessage.appendChild(document.createTextNode("New Tip: " + message.tip.username + " just donated " + message.tip.currencySymbol + message.tip.amount + "!"));
+					document.getElementById("MessageLog").insertBefore(UpdateMessage, document.getElementById("MessageLog").firstChild);
+					break;
+			}
 		}
+
 		window.addEventListener("load", function (event) {
 			// Create a new connection when the Connect button is clicked
-			document.getElementById("open").addEventListener("click", function (event) {
-				document.getElementById("open").disabled = true;
-				connectSocket("ws://" + location.host);
-			});
-
-			// Close the connection when the Disconnect button is clicked
-			document.getElementById("close").addEventListener("click", function (event) {
-				document.getElementById("close").disabled = true;
-				document.getElementById("message").innerHTML = "Disconnecting...";
-				socket.close();
-			});
 			var buttons = document.getElementsByTagName("button");
 			for (var i = 0; i < buttons.length; i++) {
-				buttons[i].disabled = true;
+				buttons[i].disabled = false;
 			}
-			document.getElementById("status").innerHTML = "Connecting...";
-			document.getElementById("close").disabled = true;
-			connectSocket("ws://" + location.host);
-
 			// Send events.
+			var sceneButtons = ["SwitchToAFK", "SwitchToGame", "SwitchToBooth"];
 			var buttonEvents = {
 				"ToggleWebcam": function (event) {
-					socket.send(JSON.stringify({ type: "ToggleWebcam", data: "" }));
+					sendMessage({ type: "ToggleWebcam", data: "" });
+					event.currentTarget.classList.toggle("Active");
+					event.currentTarget.blur();
 				},
 				"SwitchToAFK": function (event) {
-					socket.send(JSON.stringify({ type: "ChangeScene", data: "AFK" }));
+					sendMessage({ type: "ChangeScene", data: "AFK" });
+					sceneButtons.forEach((thisButton) => {
+						document.getElementById(thisButton).classList.remove("Active");
+					});
+					event.currentTarget.classList.add("Active");
+					event.currentTarget.blur();
 				},
 				"SwitchToGame": function (event) {
-					socket.send(JSON.stringify({ type: "ChangeScene", data: "Game" }));
+					sendMessage({ type: "ChangeScene", data: "Game" });
+					sceneButtons.forEach((thisButton) => {
+						document.getElementById(thisButton).classList.remove("Active");
+					});
+					event.currentTarget.classList.add("Active");
+					event.currentTarget.blur();
 				},
 				"SwitchToBooth": function (event) {
-					socket.send(JSON.stringify({ type: "ChangeScene", data: "Booth" }));
+					sendMessage({ type: "ChangeScene", data: "Booth" });
+					sceneButtons.forEach((thisButton) => {
+						document.getElementById(thisButton).classList.remove("Active");
+					});
+					event.currentTarget.classList.add("Active");
+					event.currentTarget.blur();
 				},
 				"TestFollow": function (event) {
-					socket.send(JSON.stringify({ type: "NewFollower", value: document.getElementById("FollowerName").value, isTest: true }));
+					sendMessage({ type: "NewFollower", value: document.getElementById("FollowerName").value, isTest: true });
 				},
 				"TestDonation": function (event) {
 					var Name = document.getElementById("DonationName").value;
@@ -326,20 +350,17 @@
 					if (Symbol == "") Symbol = "$";
 					var Amount = document.getElementById("DonationAmount").value;
 					Amount = Number(Amount).toFixed(2);
-					socket.send(JSON.stringify({ type: "NewTip", tip: { username: Name, currencySymbol: Symbol, amount: Amount, user: { displayName: Name } } }));
+					sendMessage({ type: "NewTip", tip: { username: Name, currencySymbol: Symbol, amount: Amount, user: { displayName: Name } } });
 				},
 				"UpdateAFK": function (event) {
-					socket.send(JSON.stringify({ type: "UpdateAFK", data: document.getElementById("AFKComment").value }));
+					sendMessage({ type: "UpdateAFK", data: document.getElementById("AFKComment").value });
 				},
 				"TestCounter": function (event) {
-					socket.send(JSON.stringify({ type: "TestStat", data: { action: "StatChanged", stat: document.getElementById("CounterName").value, value: document.getElementById("CounterValue").value } }));
+					sendMessage({ type: "TestStat", data: { action: "StatChanged", stat: document.getElementById("CounterName").value, value: document.getElementById("CounterValue").value } });
 				},
 				"UpdateTwitch": function (event) {
-					socket.send(JSON.stringify({ type: "UpdateTwitch", game: document.getElementById("TwitchGame").value, title: document.getElementById("TwitchTitle").value }));
-				},
-				"connectWebcam": function (event) {
-					doCall();
-				}
+					sendMessage({ type: "UpdateTwitch", game: document.getElementById("TwitchGame").value, title: document.getElementById("TwitchTitle").value });
+				}				
 			}
 			Object.keys(buttonEvents).forEach(function (button) {
 				if (document.getElementById(button)) {
@@ -369,12 +390,12 @@
 
 		/////////////////////////////////////////////
 
-		function sendMessage(message) {
+		function sendWebcamMessage(message) {
 			console.log('Client sending message: ', message);
 			// if (typeof message === 'object') {
 			//   message = JSON.stringify(message);
 			// }
-			socket.send(JSON.stringify({type: "VideoStream", 'message': message}));
+			sendMessage({type: "VideoStream", 'message': message});
 		}
 
 		////////////////////////////////////////////////////
@@ -383,7 +404,7 @@
 			console.log('Adding local stream.');
 			//localVideo.src = window.URL.createObjectURL(stream);
 			localStream = stream;
-			sendMessage('UserMedia');
+			sendWebcamMessage('UserMedia');
 			isChannelReady = true;
 			if (isInitiator) {
 				maybeStart();
@@ -412,7 +433,7 @@
 		}
 
 		window.onbeforeunload = function (e) {
-			sendMessage('bye');
+			sendWebcamMessage('bye');
 		}
 
 		/////////////////////////////////////////////////////////
@@ -432,7 +453,7 @@
 		function handleIceCandidate(event) {
 			console.log('handleIceCandidate event: ', event);
 			if (event.candidate) {
-				sendMessage({
+				sendWebcamMessage({
 					type: 'candidate',
 					label: event.candidate.sdpMLineIndex,
 					id: event.candidate.sdpMid,
@@ -472,18 +493,18 @@
 			// Set Opus as the preferred codec in SDP if Opus is present.
 			pc.setLocalDescription(sessionDescription);
 			console.log('setLocalAndSendMessage sending message', sessionDescription);
-			sendMessage(sessionDescription);
+			sendWebcamMessage(sessionDescription);
 		}
 
 		function hangup() {
 			console.log('Hanging up.');
 			stop();
-			sendMessage('bye');
+			sendWebcamMessage('bye');
 		}
 
 		function handleRemoteHangup() {
 			//  console.log('Session terminated.');
-			// stop();
+			stop();
 			// isInitiator = false;
 		}
 
@@ -494,7 +515,7 @@
 			pc.close();
 			pc = null;
 		}
-
+		sendMessage({ type: "Ready" });
 </script>
 </body>
 </html>

@@ -68,9 +68,9 @@ module.exports = class StreamTipConnector extends EventEmitter {
             this.streamTip.connect("wss://streamtip.com/ws?access_token=" + QueryString.escape(this.oAuth.accessToken));
         } else if (!this.streamTip) {
             // We got here because we don't have an access token - We should be authorizing by now.
-            log.debug("StreamTipConnector: No access token. Authorizing...");
-			this.status = "Authorizing";
-            this.emit("Status", "Authorizing");
+            // log.debug("StreamTipConnector: No access token. Authorizing...");
+			// this.status = "Authorizing";
+            // this.emit("Status", "Authorizing");
         } else {
             log.debug("StreamTipConnector: connect called with streamtip object and access token. Streamtip object is %s", typeof this.streamTip);
         }
