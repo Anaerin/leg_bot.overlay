@@ -1,6 +1,6 @@
 {
   "name": "overlaycommunicator",
-  "version": "0.0.2",
+  "version": "0.0.3-pre1",
   "description": "OverlayCommunicator",
   "main": "app.js",
   "private": true,

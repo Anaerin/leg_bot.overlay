@@ -1,4 +1,5 @@
-﻿var path = require("path"),
+﻿const log = require("./ConsoleLogging.js").log;
+var path = require("path"),
 	fs = require("fs"),
 	open = require("open");
 
@@ -9,8 +10,12 @@ var contentTypesByExtension = {
 };
 
 module.exports = function serveStatic(url, request, response) {
-	var wwwpath = url.pathname, filename = path.join(process.cwd(), "Overlay", wwwpath);
-
+	var pathPacked = path.join(__dirname, "Overlay");
+	var pathUnpacked = path.join(__dirname, "..","Overlay");
+	var wwwpath = url.pathname, filename
+	if (fs.existsSync(pathPacked)) filename = path.join(pathPacked, wwwpath);
+	else filename = path.join(pathUnpacked, wwwpath);
+	log.info("Found path and filename", filename);
 	fs.exists(filename, function (exists) {
 		if (!exists) {
 			response.writeHead(404, { "Content-Type": "text/plain" });
